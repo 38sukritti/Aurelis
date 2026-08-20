@@ -1,0 +1,92 @@
+/* =============================================================================
+   COMMIT NO. 22
+   COMMIT BY: Harshita
+   COMMIT MESSAGE: feat(responsive): mobile breakpoints, touch optimizations and adaptive grid layouts
+   ============================================================================= */
+
+/* Responsive Adjustments */
+
+@media (max-width: 1024px) {
+    .sidebar {
+        width: 200px;
+    }
+}
+
+@media (max-width: 768px) {
+    .app-container {
+        flex-direction: column;
+    }
+
+    .sidebar {
+        width: 100%;
+        height: auto;
+        flex-direction: row;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+        overflow-x: auto;
+        padding: 0.5rem;
+    }
+
+    .sidebar-header {
+        padding: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .logo-sub {
+        display: none;
+    }
+
+    .sidebar-nav {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        padding: 0;
+        overflow-y: visible;
+        overflow-x: auto;
+        flex: 1;
+    }
+
+    .nav-section {
+        display: flex;
+        margin-bottom: 0;
+        align-items: center;
+    }
+
+    .nav-section-title {
+        display: none;
+    }
+
+    .nav-item {
+        white-space: nowrap;
+        margin-bottom: 0;
+        margin-right: 0.5rem;
+    }
+
+    .sidebar-footer {
+        display: none;
+    }
+
+    .topbar {
+        padding: 0 1rem;
+    }
+    
+    .search-input {
+        width: 140px;
+    }
+
+    .drawer {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .search-input {
+        display: none;
+    }
+    
+    .view-container {
+        padding: 1rem;
+    }
+}
