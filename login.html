@@ -1,0 +1,187 @@
+<!-- =============================================================================
+     COMMIT NO. 13
+     COMMIT BY: Harshita
+     COMMIT MESSAGE: feat(auth): create sign in and account registration interface
+     ============================================================================= -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In &bull; AURELIS Financial Intelligence</title>
+    <meta name="description" content="Sign in or register to access your personal AURELIS spending anomaly dashboard.">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/auth.css">
+    <link rel="stylesheet" href="css/responsive.css">
+
+    <!-- Auth Guard: Redirect to dashboard if already logged in -->
+    <script>
+        (function() {
+            const raw = localStorage.getItem('currentUser') || localStorage.getItem('aurelis_current_user');
+            if (raw) {
+                try {
+                    const user = JSON.parse(raw);
+                    if (user && user.email) {
+                        window.location.replace('dashboard.html');
+                    }
+                } catch (e) {
+                    localStorage.removeItem('currentUser');
+                    localStorage.removeItem('aurelis_current_user');
+                }
+            }
+        })();
+    </script>
+</head>
+<body>
+
+<!-- ── Navigation ──────────────────────────────────────────────────────────── -->
+<header class="auth-nav">
+    <a href="index.html" class="auth-nav-logo">AURELIS</a>
+    <a href="index.html" class="btn" style="padding: 0.35rem 0.85rem; font-size: 0.8125rem;">&larr; Back to About</a>
+</header>
+
+<!-- ── Main Auth Card Section ──────────────────────────────────────────────── -->
+<main class="auth-page">
+    <div class="auth-card">
+
+        <!-- Brand Header -->
+        <div class="auth-brand">
+            <span class="auth-logo">AURELIS</span>
+            <span class="auth-tagline">Spending Anomaly Intelligence</span>
+        </div>
+
+        <!-- Tab Switcher -->
+        <div class="auth-tabs" role="tablist">
+            <button
+                id="tab-login"
+                class="auth-tab tab-active"
+                role="tab"
+                aria-selected="true"
+                aria-controls="login-panel"
+            >Sign In</button>
+            <button
+                id="tab-register"
+                class="auth-tab"
+                role="tab"
+                aria-selected="false"
+                aria-controls="register-panel"
+            >Create Account</button>
+        </div>
+
+        <!-- ── Sign In Panel ────────────────────────────────────────────────── -->
+        <div id="login-panel" role="tabpanel" aria-labelledby="tab-login">
+            <form id="login-form" class="auth-form" novalidate>
+                <div class="form-group">
+                    <label class="form-label" for="login-email">Email Address</label>
+                    <input
+                        type="email"
+                        id="login-email"
+                        class="form-input"
+                        placeholder="alex@aurelis.io"
+                        autocomplete="email"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="login-password">Password</label>
+                    <input
+                        type="password"
+                        id="login-password"
+                        class="form-input"
+                        placeholder="••••••••"
+                        autocomplete="current-password"
+                        required
+                    >
+                </div>
+
+                <button type="submit" class="auth-submit">Sign In to Dashboard</button>
+            </form>
+
+            <p class="auth-footer-note">
+                Don't have an account?
+                <a onclick="window.Auth.switchTab('register')">Create one now</a>
+            </p>
+        </div>
+
+        <!-- ── Register Panel ───────────────────────────────────────────────── -->
+        <div id="register-panel" class="hidden-panel" role="tabpanel" aria-labelledby="tab-register">
+            <form id="register-form" class="auth-form" novalidate>
+                <div class="form-group">
+                    <label class="form-label" for="reg-name">Full Name</label>
+                    <input
+                        type="text"
+                        id="reg-name"
+                        class="form-input"
+                        placeholder="Alex Vance"
+                        autocomplete="name"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="reg-email">Email Address</label>
+                    <input
+                        type="email"
+                        id="reg-email"
+                        class="form-input"
+                        placeholder="alex@example.com"
+                        autocomplete="email"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="reg-password">Password</label>
+                    <input
+                        type="password"
+                        id="reg-password"
+                        class="form-input"
+                        placeholder="At least 6 characters"
+                        autocomplete="new-password"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="reg-confirm">Confirm Password</label>
+                    <input
+                        type="password"
+                        id="reg-confirm"
+                        class="form-input"
+                        placeholder="Repeat your password"
+                        autocomplete="new-password"
+                        required
+                    >
+                </div>
+
+                <button type="submit" class="auth-submit">Create My Account</button>
+            </form>
+
+            <p class="auth-footer-note">
+                Already have an account?
+                <a onclick="window.Auth.switchTab('login')">Sign in here</a>
+            </p>
+        </div>
+
+    </div>
+</main>
+
+<!-- Toast notification container -->
+<div id="toast-container" class="toast-container"></div>
+
+<!-- Scripts -->
+<script src="js/storage.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/auth.js"></script>
+
+</body>
+</html>
