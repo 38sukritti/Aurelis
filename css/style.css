@@ -1,0 +1,341 @@
+/* =============================================================================
+   COMMIT NO. 02
+   COMMIT BY: Harshita
+   COMMIT MESSAGE: feat(design): initialize core color tokens, typography and reset styles
+   ============================================================================= */
+
+:root {
+    /* Color Palette - Premium Dark Theme */
+    --bg-base: #09090b; /* Very dark graphite */
+    --bg-surface: #131316; /* Slightly lighter for cards */
+    --bg-surface-hover: #1c1c21;
+    --bg-sidebar: #0e0e11;
+    
+    /* Text Colors */
+    --text-primary: #f4f4f5;
+    --text-secondary: #a1a1aa;
+    --text-tertiary: #71717a;
+    
+    /* Accents & Status */
+    --accent-primary: #3b82f6; /* Restrained blue */
+    --accent-primary-alpha: rgba(59, 130, 246, 0.15);
+    
+    --status-success: #10b981; /* Restrained emerald */
+    --status-success-bg: rgba(16, 185, 129, 0.1);
+    
+    --status-warning: #f59e0b; /* Restrained amber */
+    --status-warning-bg: rgba(245, 158, 11, 0.1);
+    
+    --status-danger: #ef4444; /* Restrained red */
+    --status-danger-bg: rgba(239, 68, 68, 0.1);
+
+    /* Borders */
+    --border-color: #27272a;
+    --border-light: #3f3f46;
+
+    /* Typography */
+    --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    
+    /* Shadows & Effects */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    
+    /* Transitions */
+    --transition-fast: 150ms ease-in-out;
+    --transition-normal: 250ms ease-in-out;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: var(--font-family);
+    background-color: var(--bg-base);
+    color: var(--text-primary);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden; /* App feels like native desktop */
+}
+
+/* Splash Screen */
+.splash-screen {
+    position: fixed;
+    inset: 0;
+    background-color: var(--bg-base);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    transition: opacity 400ms ease-out;
+}
+
+.splash-content {
+    text-align: center;
+}
+
+.splash-logo {
+    font-size: 2rem;
+    font-weight: 300;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.5rem;
+}
+
+.splash-subtitle {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 2rem;
+}
+
+.splash-loader {
+    color: var(--text-tertiary);
+    font-size: 0.75rem;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+}
+
+/* App Layout */
+.app-container {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+    transition: opacity var(--transition-normal);
+}
+
+.hidden {
+    opacity: 0;
+    pointer-events: none;
+    display: none !important;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 260px;
+    background-color: var(--bg-sidebar);
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+}
+
+.sidebar-header {
+    padding: 2rem 1.5rem 1.5rem;
+}
+
+.logo {
+    font-size: 1.25rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+}
+
+.logo-sub {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 0.25rem;
+    display: block;
+}
+
+.sidebar-nav {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 1rem;
+}
+
+.nav-section {
+    margin-bottom: 1.5rem;
+}
+
+.nav-section-title {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.5rem;
+    padding: 0 0.5rem;
+    display: block;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem;
+    margin-bottom: 0.25rem;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.875rem;
+    border-radius: 4px;
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.nav-item:hover {
+    background-color: var(--bg-surface-hover);
+    color: var(--text-primary);
+}
+
+.nav-item.active {
+    background-color: var(--bg-surface);
+    color: var(--text-primary);
+    font-weight: 500;
+    border-left: 2px solid var(--text-primary);
+    padding-left: calc(0.5rem - 2px);
+}
+
+.sidebar-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.system-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.status-indicator {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+}
+
+.status-indicator.online {
+    background-color: var(--status-success);
+    box-shadow: 0 0 8px var(--status-success-bg);
+}
+
+.status-text {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    font-family: monospace;
+}
+
+/* Main Content */
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Topbar */
+.topbar {
+    height: 64px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 2rem;
+    flex-shrink: 0;
+}
+
+.current-date {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.search-input {
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 0.35rem 1rem;
+    border-radius: 100px;
+    font-size: 0.875rem;
+    width: 200px;
+    transition: border-color var(--transition-fast);
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--border-light);
+}
+
+.icon-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color var(--transition-fast);
+}
+
+.icon-btn:hover {
+    color: var(--text-primary);
+}
+
+.avatar-placeholder {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: var(--bg-surface-hover);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+/* View Container */
+.view-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 2rem;
+    /* Custom Scrollbar for View */
+}
+.view-container::-webkit-scrollbar,
+.custom-scrollbar::-webkit-scrollbar,
+div[style*="overflow-y: auto"]::-webkit-scrollbar {
+    width: 6px;
+}
+.view-container::-webkit-scrollbar-track,
+.custom-scrollbar::-webkit-scrollbar-track,
+div[style*="overflow-y: auto"]::-webkit-scrollbar-track {
+    background: transparent;
+}
+.view-container::-webkit-scrollbar-thumb,
+.custom-scrollbar::-webkit-scrollbar-thumb,
+div[style*="overflow-y: auto"]::-webkit-scrollbar-thumb {
+    background-color: var(--border-color);
+    border-radius: 10px;
+}
+.view-container::-webkit-scrollbar-thumb:hover,
+.custom-scrollbar::-webkit-scrollbar-thumb:hover,
+div[style*="overflow-y: auto"]::-webkit-scrollbar-thumb:hover {
+    background-color: var(--border-light);
+}
+
+/* Page Transitions */
+.view-enter {
+    animation: fadeIn 300ms ease-out forwards;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Typography Basics */
+h1 { font-size: 1.875rem; font-weight: 300; margin-bottom: 0.25rem; }
+h2 { font-size: 1.5rem; font-weight: 400; margin-bottom: 1rem; }
+h3 { font-size: 1.125rem; font-weight: 500; margin-bottom: 0.75rem; }
+.subtitle { color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 2rem; }
