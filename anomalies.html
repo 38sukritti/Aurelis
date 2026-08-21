@@ -1,0 +1,215 @@
+<!-- =============================================================================
+     COMMIT NO. 25
+     COMMIT BY: Simran
+     COMMIT MESSAGE: feat(anomalies): standalone statistical anomaly inspector and sensitivity controls
+     ============================================================================= -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anomaly Analysis &bull; AURELIS</title>
+    <meta name="description" content="Inspect mathematical anomalies in your personal spending using z-score statistical analysis.">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/anomalies.css">
+    <link rel="stylesheet" href="css/responsive.css">
+
+    <!-- Auth Guard & Route to Left Sidebar App Shell -->
+    <script>
+        (function() {
+            const raw = localStorage.getItem('currentUser') || localStorage.getItem('aurelis_current_user');
+            if (!raw) {
+                window.location.replace('login.html');
+                return;
+            }
+            try {
+                const user = JSON.parse(raw);
+                if (!user || !user.email) {
+                    window.location.replace('login.html');
+                    return;
+                }
+            } catch (e) {
+                window.location.replace('login.html');
+                return;
+            }
+            // Navigate directly to anomalies view in sidebar shell
+            window.location.replace('dashboard.html#/anomalies');
+        })();
+    </script>
+</head>
+<body>
+
+<div class="page-shell">
+
+    <!-- ── Top Navigation Bar ────────────────────────────────────────────────── -->
+    <header class="dash-topbar">
+        <div class="topbar-left">
+            <a href="index.html" class="topbar-brand">AURELIS</a>
+
+            <nav class="page-nav" aria-label="Workspace navigation">
+                <a href="dashboard.html">Dashboard</a>
+                <a href="anomalies.html" class="active">Anomaly Analysis</a>
+            </nav>
+        </div>
+
+        <div class="topbar-right">
+            <div class="user-profile-badge">
+                <div class="user-avatar" id="user-avatar">A</div>
+                <span class="topbar-user">
+                    Signed in as <strong id="user-display-name">—</strong>
+                </span>
+            </div>
+            <button id="btn-logout" class="btn" aria-label="Sign out">Sign Out</button>
+        </div>
+    </header>
+
+    <!-- ── Main Content ─────────────────────────────────────────────────────── -->
+    <main class="anomalies-content">
+
+        <!-- Page Header -->
+        <div class="page-header">
+            <div>
+                <h1>Statistical Anomaly Inspector</h1>
+                <p class="subtitle">
+                    Every transaction compared against your personalized category baseline using Z-score deviations.
+                </p>
+            </div>
+            <div class="page-header-actions">
+                <a href="dashboard.html" class="btn">
+                    &larr; Back to Dashboard
+                </a>
+            </div>
+        </div>
+
+        <!-- ── Summary KPI Strip ──────────────────────────────────────────────── -->
+        <div class="anomaly-kpi-strip" aria-label="Detection summary">
+            <div class="kpi-pill">
+                <span class="kpi-pill-label">Total Transactions</span>
+                <span class="kpi-pill-value" id="summary-total">0</span>
+            </div>
+            <div class="kpi-pill" style="border-color: rgba(239, 68, 68, 0.35);">
+                <span class="kpi-pill-label">Anomalies Detected</span>
+                <span class="kpi-pill-value" id="summary-anomalies" style="color: var(--status-danger);">0</span>
+            </div>
+            <div class="kpi-pill" style="border-color: rgba(16, 185, 129, 0.35);">
+                <span class="kpi-pill-label">Normal Transactions</span>
+                <span class="kpi-pill-value" id="summary-normal" style="color: var(--status-success);">0</span>
+            </div>
+            <div class="kpi-pill" style="border-color: rgba(59, 130, 246, 0.35);">
+                <span class="kpi-pill-label">Active Threshold</span>
+                <span class="kpi-pill-value" id="threshold-display" style="color: var(--accent-primary);">3.0σ</span>
+            </div>
+        </div>
+
+        <!-- ── Mathematical Explanation Banner ──────────────────────────────── -->
+        <div class="algo-banner" role="note">
+            <div class="algo-banner-icon" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+            </div>
+            <div class="algo-banner-text">
+                <strong>How the detection engine calculates outliers:</strong>
+                For each category, AURELIS computes your historical Mean (&mu;) and Population Standard Deviation (&sigma;).
+                When a transaction's absolute Z-Score crosses your threshold, it is classified into Moderate (&ge; threshold), High (&ge; threshold+1&sigma;), or Critical (&ge; threshold+2&sigma;).
+                <br>
+                <span class="algo-formula">z = (amount - &mu;) / &sigma;</span>
+                &nbsp;&bull;&nbsp;
+                <span class="algo-formula">|z| &ge; threshold &rarr; Anomaly Flagged</span>
+            </div>
+        </div>
+
+        <!-- ── Interactive Controls Strip ────────────────────────────────────── -->
+        <div class="controls-strip">
+            <!-- Dynamic Threshold Slider -->
+            <div class="threshold-control">
+                <label class="threshold-label" for="threshold-slider">Anomaly Threshold (&sigma;):</label>
+                <input
+                    type="range"
+                    id="threshold-slider"
+                    class="threshold-slider"
+                    min="2.0"
+                    max="4.0"
+                    step="0.1"
+                    value="3.0"
+                >
+                <span id="threshold-val" class="threshold-val">3.0σ</span>
+            </div>
+
+            <!-- Filters -->
+            <div class="filter-group">
+                <button class="filter-btn active" data-filter="all">All Records</button>
+                <button class="filter-btn" data-filter="anomalies" style="color: #f87171;">Anomalies Only</button>
+                <button class="filter-btn" data-filter="normal" style="color: #34d399;">Normal Only</button>
+
+                <select id="filter-category" class="form-input" style="width: auto; padding: 0.35rem 0.75rem; font-size: 0.8125rem; background-color: var(--bg-base);">
+                    <option value="">All Categories</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- ── Anomaly Inspection Table ──────────────────────────────────────── -->
+        <div class="table-container">
+            <table id="anomalies-table" aria-label="Anomaly analysis table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Category</th>
+                        <th>Description</th>
+                        <th class="cell-amount">Amount</th>
+                        <th>Cat. Mean (&mu;)</th>
+                        <th>Cat. StdDev (&sigma;)</th>
+                        <th>Z-Score (z)</th>
+                        <th>Status</th>
+                        <th style="text-align: right;">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="anomalies-table-body">
+                    <!-- Injected by anomalies.js -->
+                </tbody>
+            </table>
+
+            <div id="empty-notice" class="empty-state" style="display: none;">
+                <div class="empty-state-icon" style="display: flex; justify-content: center; margin-bottom: 0.75rem;">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                </div>
+                <div class="empty-state-title">No transactions match the selected filter</div>
+                <p class="empty-state-text">
+                    Try switching filters or adjusting your Z-score sensitivity slider above.
+                </p>
+            </div>
+        </div>
+
+    </main>
+
+</div>
+
+<!-- Toast notifications -->
+<div id="toast-container" class="toast-container"></div>
+
+<!-- Scripts -->
+<script src="js/statistics.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/transactions.js"></script>
+<script src="js/anomalyDetector.js"></script>
+<script src="js/anomalyEngine.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/anomalies.js"></script>
+
+</body>
+</html>
