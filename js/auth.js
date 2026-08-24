@@ -151,6 +151,9 @@ const handleRegister = (e) => {
     const newUser = { id: email, name, email, password };
     window.StorageModule.saveUser(newUser);
     window.StorageModule.setCurrentUser(newUser);
+    if (window.StorageModule.clearUserTransactions) {
+        window.StorageModule.clearUserTransactions(email);
+    }
 
     window.Utils.showToast(`Account created! Welcome, ${name}.`, 'success');
 

@@ -51,11 +51,11 @@ const App = {
             });
         }
 
-        // For the current user: seed demo data on first login
-        if (this.currentUser) {
+        // Only seed demo data for the dedicated demo account (demo@aurelis.io)
+        if (this.currentUser && this.currentUser.email === 'demo@aurelis.io') {
             const userTxs = window.StorageModule.getTransactionsForUser(this.currentUser.email);
             if (userTxs.length === 0 && window.StorageModule.seedDemoDataForUser) {
-                console.log('First time for this user — seeding demo data...');
+                console.log('Seeding demo data for demo user...');
                 window.StorageModule.seedDemoDataForUser(this.currentUser.email);
             }
         }

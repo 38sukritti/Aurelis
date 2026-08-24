@@ -71,6 +71,11 @@ const AppRouter = {
             case '/analytics':
                 this.renderAnalytics(transactions, analysis);
                 break;
+            case '/learning':
+            case '/education':
+            case '/videos':
+                this.renderLearning(transactions, analysis);
+                break;
             case '/spending-analysis':
             case '/intelligence':
                 this.renderSpendingAnalysis(transactions, analysis, settings);
@@ -84,11 +89,273 @@ const AppRouter = {
     },
 
     /* =======================================================================
-     * VIEW RENDERING — DASHBOARD
+     * VIEW RENDERING — DASHBOARD (EXECUTIVE OVERVIEW)
      * ======================================================================= */
 
     renderDashboard: function(transactions, analysis, settings) {
-        this.renderSpendingAnalysis(transactions, analysis, settings);
+        const { anomalies, baselines, decoratedTransactions } = analysis;
+        const totalTransactions = transactions.length;
+        const anomalousCount = anomalies.length;
+        const anomalyRate = totalTransactions > 0 ? (anomalousCount / totalTransactions) * 100 : 0;
+        const currentUser = window.StorageModule.getCurrentUser ? window.StorageModule.getCurrentUser() : { name: 'User' };
+        const userName = currentUser ? currentUser.name : 'User';
+
+        // Calculate aggregates
+        let totalSpend = 0;
+        const categoryTotals = {};
+        transactions.forEach(tx => {
+            const cat = tx.category || 'Other';
+            const amt = parseFloat(tx.amount) || 0;
+            categoryTotals[cat] = (categoryTotals[cat] || 0) + amt;
+            totalSpend += amt;
+        });
+
+        const avgTransaction = totalTransactions > 0 ? totalSpend / totalTransactions : 0;
+        const activeBaselinesCount = Object.values(baselines).filter(b => !b.insufficientData && b.count >= 3).length;
+        const totalCategoriesCount = Object.keys(categoryTotals).length;
+
+        // Category breakdown list (Top 4)
+        const topCategories = Object.keys(categoryTotals)
+            .map(cat => ({
+                category: cat,
+                total: categoryTotals[cat],
+                percent: totalSpend > 0 ? (categoryTotals[cat] / totalSpend) * 100 : 0
+            }))
+            .sort((a, b) => b.total - a.total);
+
+        // Status badge
+        let statusBadgeText = 'ALL NORMAL';
+        let statusBadgeBg = 'var(--status-success)';
+        let statusBadgeColor = '#000';
+        let statusMetricColor = 'var(--status-success)';
+
+        const hasCritical = anomalies.some(a => a.severity === 'Critical');
+        const hasHigh = anomalies.some(a => a.severity === 'High');
+        if (hasCritical) {
+            statusBadgeText = 'CRITICAL ANOMALIES';
+            statusBadgeBg = 'var(--status-danger)';
+            statusBadgeColor = '#fff';
+            statusMetricColor = 'var(--status-danger)';
+        } else if (hasHigh || anomalousCount > 0) {
+            statusBadgeText = 'ATTENTION REQUIRED';
+            statusBadgeBg = 'var(--status-warning)';
+            statusBadgeColor = '#000';
+            statusMetricColor = 'var(--status-warning)';
+        }
+
+        // Recent 5 transactions
+        const recentTxs = (decoratedTransactions || transactions).slice(0, 5);
+
+        let emptyBanner = '';
+        if (totalTransactions === 0) {
+            emptyBanner = `
+                <div class="card" style="margin-bottom: 2rem; border-left: 4px solid var(--accent-primary); background: linear-gradient(to right, rgba(59, 130, 246, 0.08), transparent);">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+                        <div>
+                            <h3 style="margin-bottom: 0.35rem; color: var(--text-primary);">Welcome to your new AURELIS Workspace, ${userName}!</h3>
+                            <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 1rem;">
+                                Your workspace is completely clean. Record your first transaction or import a CSV file to begin tracking and calculating your personalized statistical baseline.
+                            </p>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                        <button class="btn btn-primary" onclick="AppRouter.openAddTransactionModal()">+ Add Your First Transaction</button>
+                        <button class="btn" onclick="AppRouter.openImportModal()">Import CSV Data</button>
+                        <button class="btn" onclick="AppRouter.loadDemoData()">Load Sample Demo Dataset</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        let html = `
+            <!-- Top Dashboard Header -->
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+                <div>
+                    <h1 style="margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.75rem;">
+                        Executive Dashboard
+                        <span class="badge" style="background: rgba(59, 130, 246, 0.12); color: var(--accent-primary); border: 1px solid rgba(59, 130, 246, 0.3);">LIVE WORKSPACE</span>
+                    </h1>
+                    <p class="subtitle" style="margin-bottom: 0;">Overview of your personal spending velocity, category baselines, and statistical outliers.</p>
+                </div>
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    <button class="btn" onclick="AppRouter.openImportModal()">Import CSV</button>
+                    <button class="btn btn-primary" onclick="AppRouter.openAddTransactionModal()">+ Add Transaction</button>
+                </div>
+            </div>
+
+            ${emptyBanner}
+
+            <!-- 4 KPI Executive Metric Cards -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem; margin-bottom: 2rem;">
+                <div class="card" style="display: flex; flex-direction: column;">
+                    <div style="font-size: 0.75rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em;">Total Spending</div>
+                    <div style="font-size: 1.75rem; font-weight: 600; color: var(--text-primary); margin-top: 0.35rem;">
+                        ${window.UIModule.formatCurrency(totalSpend)}
+                    </div>
+                    <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem;">
+                        ${totalTransactions} total recorded transaction${totalTransactions === 1 ? '' : 's'}
+                    </div>
+                </div>
+
+                <div class="card" style="display: flex; flex-direction: column; border-left: 3px solid ${anomalousCount > 0 ? 'var(--status-warning)' : 'var(--status-success)'};">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 0.75rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em;">Anomalies Detected</span>
+                        <span class="badge" style="background: ${statusBadgeBg}; color: ${statusBadgeColor}; font-size: 0.65rem; font-weight: 700;">${statusBadgeText}</span>
+                    </div>
+                    <div style="font-size: 1.75rem; font-weight: 600; color: ${statusMetricColor}; margin-top: 0.35rem;">
+                        ${anomalousCount}
+                    </div>
+                    <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem;">
+                        ${anomalyRate.toFixed(1)}% of spending flagged (&ge; ${settings.zScoreThreshold || 3.0}σ)
+                    </div>
+                </div>
+
+                <div class="card" style="display: flex; flex-direction: column;">
+                    <div style="font-size: 0.75rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em;">Average Spend / Txn</div>
+                    <div style="font-size: 1.75rem; font-weight: 600; color: var(--accent-primary); margin-top: 0.35rem;">
+                        ${window.UIModule.formatCurrency(avgTransaction)}
+                    </div>
+                    <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem;">
+                        Across ${totalCategoriesCount} spending categories
+                    </div>
+                </div>
+
+                <div class="card" style="display: flex; flex-direction: column;">
+                    <div style="font-size: 0.75rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em;">Baseline Status</div>
+                    <div style="font-size: 1.75rem; font-weight: 600; color: var(--text-primary); margin-top: 0.35rem;">
+                        ${activeBaselinesCount} / ${Math.max(1, totalCategoriesCount)}
+                    </div>
+                    <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem;">
+                        ${activeBaselinesCount > 0 ? 'Active category models' : 'Learning your patterns (&ge;3 tx/cat)'}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Two Columns: Anomaly Gauge & Top Categories -->
+            <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+                
+                <!-- Anomaly Gauge & Mathematical Model -->
+                <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h3 style="margin: 0;">Statistical Health Gauge</h3>
+                        <a href="#/anomalies" class="btn" style="font-size: 0.75rem; padding: 0.3rem 0.65rem;">View Anomalies &rarr;</a>
+                    </div>
+                    <div style="display: flex; flex-direction: column; align-items: center; padding: 0.5rem 0;">
+                        <canvas id="anomalyGauge" width="280" height="150"></canvas>
+                        <div style="font-size: 1.75rem; font-weight: 700; margin-top: -1.25rem; color: var(--text-primary);">
+                            ${anomalyRate.toFixed(0)}%
+                        </div>
+                        <div style="font-size: 0.8125rem; color: var(--text-secondary); margin-top: 0.25rem;">
+                            ${anomalousCount} anomalous transactions out of ${totalTransactions}
+                        </div>
+                    </div>
+                    <div style="border-top: 1px solid var(--border-color); padding-top: 0.75rem; margin-top: 0.75rem; display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-tertiary);">
+                        <span>Threshold Sensitivity: <strong>${settings.zScoreThreshold || 3.0}σ</strong></span>
+                        <a href="#/settings" style="color: var(--accent-primary); text-decoration: none;">Adjust in Settings</a>
+                    </div>
+                </div>
+
+                <!-- Top Categories Spending -->
+                <div class="card" style="display: flex; flex-direction: column;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h3 style="margin: 0;">Top Category Spending</h3>
+                        <a href="#/analytics" class="btn" style="font-size: 0.75rem; padding: 0.3rem 0.65rem;">Full Analytics &rarr;</a>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 0.85rem; flex: 1; justify-content: center;">
+                        ${topCategories.length > 0 ? topCategories.slice(0, 4).map(item => `
+                            <div class="horizontal-bar-container" style="margin-bottom: 0;">
+                                <div class="horizontal-bar-label">
+                                    <span style="font-weight: 500;">${item.category}</span>
+                                    <span style="font-family: monospace; color: var(--text-secondary);">${window.UIModule.formatCurrency(item.total)} (${item.percent.toFixed(0)}%)</span>
+                                </div>
+                                <div class="horizontal-bar-track">
+                                    <div class="horizontal-bar-fill" style="width: ${item.percent.toFixed(1)}%; background-color: var(--accent-primary);"></div>
+                                </div>
+                            </div>
+                        `).join('') : '<p style="color: var(--text-secondary); font-size: 0.875rem; text-align: center; margin: 2rem 0;">No spending recorded yet.</p>'}
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Recent Activity Table on Dashboard -->
+            <div class="card" style="padding: 1.25rem 1.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.5rem;">
+                    <div>
+                        <h3 style="margin-bottom: 0.2rem;">Recent Transactions</h3>
+                        <p style="font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: 0;">Your latest activity and real-time statistical baseline evaluation.</p>
+                    </div>
+                    <a href="#/transactions" class="btn btn-primary" style="font-size: 0.8125rem;">
+                        View All Transactions (${totalTransactions}) &rarr;
+                    </a>
+                </div>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Merchant / Description</th>
+                                <th>Category</th>
+                                <th class="cell-amount">Amount</th>
+                                <th>Baseline Status</th>
+                                <th style="text-align: right;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${recentTxs.map(tx => {
+                                const isAnom = tx.isAnomaly || (tx.analysis && tx.analysis.isAnomaly);
+                                const z = (tx.zScore !== undefined) ? tx.zScore : (tx.analysis ? tx.analysis.zScore : 0);
+                                let statusBadge = '<span class="badge badge-normal">Normal</span>';
+                                if (isAnom) {
+                                    const severity = tx.severity || (tx.analysis ? tx.analysis.severity : 'High');
+                                    statusBadge = `<span class="badge badge-warning" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3);">${severity} (+${Math.abs(z || 0).toFixed(1)}σ)</span>`;
+                                } else if (tx.insufficientData) {
+                                    statusBadge = '<span class="badge" style="background: rgba(148, 163, 184, 0.1); color: #94a3b8;">Learning</span>';
+                                }
+
+                                const txDateDisplay = tx.date || (tx.timestamp ? new Date(tx.timestamp).toISOString().split('T')[0] : '—');
+
+                                return `
+                                    <tr data-tx-id="${tx.id}">
+                                        <td style="color: var(--text-secondary); white-space: nowrap;">${txDateDisplay}</td>
+                                        <td>
+                                            <div style="font-weight: 500; color: var(--text-primary);">${tx.merchant || tx.description || 'Expense'}</div>
+                                        </td>
+                                        <td><span class="badge badge-outline">${tx.category || 'Other'}</span></td>
+                                        <td class="cell-amount" style="font-weight: 600; font-family: monospace;">${window.UIModule.formatCurrency(tx.amount)}</td>
+                                        <td>${statusBadge}</td>
+                                        <td style="text-align: right;">
+                                            <button class="btn" style="padding: 0.25rem 0.55rem; font-size: 0.75rem;" onclick="AppRouter.openEditTransactionModal('${tx.id}')">Edit</button>
+                                        </td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+
+                    ${recentTxs.length === 0 ? `
+                        <div style="text-align: center; padding: 2.5rem 1rem; color: var(--text-secondary);">
+                            <p style="font-size: 0.9375rem; margin-bottom: 1rem;">No transactions recorded yet.</p>
+                            <button class="btn btn-primary" onclick="AppRouter.openAddTransactionModal()">+ Add Your First Transaction</button>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+
+        this.container.innerHTML = html;
+
+        setTimeout(() => {
+            if (window.ChartsModule && window.ChartsModule.drawAnomalyGauge) {
+                window.ChartsModule.drawAnomalyGauge('anomalyGauge', anomalyRate, statusBadgeText);
+            }
+            document.querySelectorAll('.horizontal-bar-fill').forEach(bar => {
+                const w = bar.style.width;
+                bar.style.width = '0';
+                setTimeout(() => bar.style.width = w, 50);
+            });
+        }, 50);
     },
 
     /* =======================================================================
@@ -138,7 +405,22 @@ const AppRouter = {
             }))
             .sort((a, b) => b.total - a.total);
 
-        const recentAnomalies = anomalies.slice(0, 6);
+        let emptyStateBanner = '';
+        if (totalTransactions === 0) {
+            emptyStateBanner = `
+                <div class="card" style="margin-bottom: 2rem; border-left: 4px solid var(--accent-primary); background: linear-gradient(to right, rgba(59, 130, 246, 0.08), transparent);">
+                    <h3 style="margin-bottom: 0.5rem; color: var(--text-primary);">Welcome to your personal AURELIS Workspace!</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 1.25rem;">
+                        This is your private workspace. You currently have no transactions recorded. Add your expenses or import a CSV to let AURELIS learn your personalized statistical spending baseline.
+                    </p>
+                    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                        <button class="btn btn-primary" onclick="AppRouter.openAddTransactionModal()">+ Add Your First Transaction</button>
+                        <button class="btn" onclick="AppRouter.openImportModal()">Import CSV Data</button>
+                        <button class="btn" onclick="AppRouter.loadDemoData()">Load Sample Demo Dataset</button>
+                    </div>
+                </div>
+            `;
+        }
 
         let html = `
             <div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
@@ -150,6 +432,8 @@ const AppRouter = {
                     <p class="subtitle">Statistical insights derived from your personal transaction history.</p>
                 </div>
             </div>
+
+            ${emptyStateBanner}
 
             <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
                 <!-- Main Card: Spending Anomaly Analysis -->
@@ -443,58 +727,355 @@ const AppRouter = {
      * VIEW RENDERING — ANOMALIES CENTER
      * ======================================================================= */
 
+    _anomalyFilter: 'ALL',
+
+    handleAnomalyFilter: function(filter) {
+        this._anomalyFilter = filter;
+        this.handleRoute();
+    },
+
     renderAnomalies: function(analysis) {
         const { anomalies } = analysis;
+        const currentFilter = this._anomalyFilter || 'ALL';
+
+        const criticalCount = anomalies.filter(a => (a.severity || '').toLowerCase() === 'critical').length;
+        const highCount = anomalies.filter(a => (a.severity || '').toLowerCase() === 'high').length;
+        const moderateCount = anomalies.filter(a => {
+            const s = (a.severity || '').toLowerCase();
+            return s === 'moderate' || s === 'medium' || s === 'low';
+        }).length;
+
+        // Apply severity filter
+        const filteredAnomalies = anomalies.filter(a => {
+            const s = (a.severity || '').toLowerCase();
+            if (currentFilter === 'CRITICAL') return s === 'critical';
+            if (currentFilter === 'HIGH') return s === 'high';
+            if (currentFilter === 'MODERATE') return s === 'moderate' || s === 'medium' || s === 'low';
+            return true;
+        });
         
         let html = `
-            <div style="margin-bottom: 2rem;">
-                <h1>Anomaly Center</h1>
-                <p class="subtitle">Transactions that deviate materially from your personal category spending baseline.</p>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+                <div>
+                    <h1 style="margin-bottom: 0.25rem;">Anomaly Center</h1>
+                    <p class="subtitle" style="margin-bottom: 0;">Statistical outlier inspection: Flagged charges deviating beyond your personal category threshold.</p>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <a href="#/learning" class="btn" style="color: var(--accent-primary); border-color: rgba(59, 130, 246, 0.4);">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 0.35rem;"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+                        Anomaly Playbooks &amp; Videos &rarr;
+                    </a>
+                </div>
             </div>
 
-            <div style="margin-bottom: 1.5rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                <span class="badge" style="background: var(--text-primary); color: var(--bg-base); font-size: 0.75rem; padding: 0.5rem 1rem;">All (${anomalies.length})</span>
-                <span class="badge badge-critical" style="font-size: 0.75rem; padding: 0.5rem 1rem;">Critical</span>
-                <span class="badge badge-high" style="font-size: 0.75rem; padding: 0.5rem 1rem;">High</span>
+            <!-- Interactive Filter Strip -->
+            <div style="margin-bottom: 1.5rem; display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+                <span style="font-size: 0.8125rem; color: var(--text-tertiary); margin-right: 0.25rem;">Filter by Severity:</span>
+                
+                <button type="button" class="btn" style="padding: 0.35rem 0.85rem; font-size: 0.75rem; border-radius: 9999px; ${currentFilter === 'ALL' ? 'background: var(--text-primary); color: var(--bg-base); font-weight: 600;' : ''}" onclick="AppRouter.handleAnomalyFilter('ALL')">
+                    All (${anomalies.length})
+                </button>
+                
+                <button type="button" class="btn" style="padding: 0.35rem 0.85rem; font-size: 0.75rem; border-radius: 9999px; ${currentFilter === 'CRITICAL' ? 'background: var(--status-danger); color: #fff; border-color: var(--status-danger); font-weight: 600;' : 'color: var(--status-danger); border-color: rgba(239, 68, 68, 0.4);'}" onclick="AppRouter.handleAnomalyFilter('CRITICAL')">
+                    Critical (${criticalCount})
+                </button>
+                
+                <button type="button" class="btn" style="padding: 0.35rem 0.85rem; font-size: 0.75rem; border-radius: 9999px; ${currentFilter === 'HIGH' ? 'background: var(--status-warning); color: #000; border-color: var(--status-warning); font-weight: 600;' : 'color: var(--status-warning); border-color: rgba(245, 158, 11, 0.4);'}" onclick="AppRouter.handleAnomalyFilter('HIGH')">
+                    High (${highCount})
+                </button>
+                
+                <button type="button" class="btn" style="padding: 0.35rem 0.85rem; font-size: 0.75rem; border-radius: 9999px; ${currentFilter === 'MODERATE' ? 'background: var(--accent-primary); color: #fff; border-color: var(--accent-primary); font-weight: 600;' : 'color: var(--accent-primary); border-color: rgba(59, 130, 246, 0.4);'}" onclick="AppRouter.handleAnomalyFilter('MODERATE')">
+                    Moderate (${moderateCount})
+                </button>
             </div>
 
             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem;">
-                ${anomalies.map((a, idx) => `
-                    <div class="card" style="border-top: 3px solid ${a.severity === 'Critical' ? 'var(--status-danger)' : (a.severity === 'High' ? 'var(--status-warning)' : 'var(--accent-primary)')}">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
-                            <div>
-                                <h3 style="margin-bottom: 0.25rem;">${a.transaction.merchant || a.transaction.description || 'Expense'}</h3>
-                                <span class="badge badge-outline">${a.transaction.category}</span>
+                ${filteredAnomalies.map((a, idx) => {
+                    const isCrit = (a.severity || '').toLowerCase() === 'critical';
+                    const isHgh = (a.severity || '').toLowerCase() === 'high';
+                    const borderCol = isCrit ? 'var(--status-danger)' : (isHgh ? 'var(--status-warning)' : 'var(--accent-primary)');
+
+                    return `
+                    <div class="card" style="border-top: 3px solid ${borderCol}; display: flex; flex-direction: column; justify-content: space-between;">
+                        <div>
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                                <div>
+                                    <h3 style="margin-bottom: 0.25rem;">${a.transaction.merchant || a.transaction.description || 'Expense'}</h3>
+                                    <span class="badge badge-outline">${a.transaction.category}</span>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div style="font-size: 1.25rem; font-weight: 600; font-family: monospace;">${window.UIModule.formatCurrency(a.transaction.amount)}</div>
+                                    <div style="margin-top: 0.25rem;">${window.UIModule.getSeverityBadge(a.severity)}</div>
+                                </div>
                             </div>
-                            <div style="text-align: right;">
-                                <div style="font-size: 1.25rem; font-weight: 500;">${window.UIModule.formatCurrency(a.transaction.amount)}</div>
-                                ${window.UIModule.getSeverityBadge(a.severity)}
+                            
+                            <div style="background: var(--bg-base); padding: 0.75rem; border-radius: 6px; border: 1px solid var(--border-color); margin-bottom: 1rem; font-size: 0.8125rem;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.35rem;">
+                                    <span style="color: var(--text-secondary);">Z-Score Deviation</span>
+                                    <span style="color: ${borderCol}; font-family: monospace; font-weight: 700;">+${Math.abs(a.zScore || 0).toFixed(2)}σ</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.35rem;">
+                                    <span style="color: var(--text-secondary);">Category Baseline (μ)</span>
+                                    <span style="font-family: monospace;">${window.UIModule.formatCurrency(a.baseline ? a.baseline.mean : (a.mean || 0))}</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span style="color: var(--text-secondary);">Excess Spread</span>
+                                    <span style="color: var(--status-warning); font-weight: 600;">+${a.deviationPercent ? a.deviationPercent.toFixed(0) : Math.round(((a.transaction.amount - (a.mean || 1)) / (a.mean || 1)) * 100)}%</span>
+                                </div>
                             </div>
+                            
+                            <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 1rem; line-height: 1.4;">
+                                ${a.reason || a.notes || `Deviates significantly from your personal historical mean.`}
+                            </p>
                         </div>
                         
-                        <div style="background: var(--bg-base); padding: 0.75rem; border-radius: 4px; border: 1px solid var(--border-color); margin-bottom: 1rem; font-size: 0.875rem;">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
-                                <span style="color: var(--text-secondary)">Z-Score</span>
-                                <span style="color: var(--status-danger); font-family: monospace; font-weight: 600;">+${a.zScore.toFixed(2)}σ</span>
-                            </div>
-                            <div style="display: flex; justify-content: space-between;">
-                                <span style="color: var(--text-secondary)">Deviation</span>
-                                <span>+${a.deviationPercent ? a.deviationPercent.toFixed(0) : Math.round(((a.transaction.amount - (a.mean || 1)) / (a.mean || 1)) * 100)}%</span>
-                            </div>
-                        </div>
-                        
-                        <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 1rem;">${a.reason || `Deviates significantly from category mean of ${window.UIModule.formatCurrency(a.mean || 0)}.`}</p>
-                        
-                        <div style="display: flex; gap: 0.5rem;">
+                        <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
                             <button class="btn btn-primary" style="flex: 1;" onclick='AppRouter.inspectAnomaly(${JSON.stringify(a).replace(/'/g, "&apos;")})'>Inspect</button>
                             <button class="btn" style="flex: 1;" onclick="window.UIModule.showToast('Anomaly acknowledged', 'info')">Dismiss</button>
                         </div>
                     </div>
-                `).join('')}
+                `;
+                }).join('')}
                 
-                ${anomalies.length === 0 ? '<div class="card" style="grid-column: 1 / -1; text-align: center; padding: 4rem 1rem;"><h3 style="color: var(--text-secondary)">No anomalies detected</h3><p style="color: var(--text-tertiary)">Your spending is aligned with your personal historical baselines.</p></div>' : ''}
+                ${filteredAnomalies.length === 0 ? `
+                    <div class="card" style="grid-column: 1 / -1; text-align: center; padding: 4rem 1rem;">
+                        <h3 style="color: var(--text-secondary); margin-bottom: 0.5rem;">No ${currentFilter === 'ALL' ? '' : currentFilter.toLowerCase()} anomalies found</h3>
+                        <p style="color: var(--text-tertiary); font-size: 0.875rem; margin-bottom: 1.25rem;">
+                            ${anomalies.length > 0 ? 'Try selecting a different filter above.' : 'Your transactions are aligned with your historical baseline.'}
+                        </p>
+                        <button class="btn btn-primary" onclick="AppRouter.handleAnomalyFilter('ALL')">Show All Categories</button>
+                    </div>
+                ` : ''}
             </div>
         `;
+        this.container.innerHTML = html;
+    },
+
+    /* =======================================================================
+     * VIEW RENDERING — FINANCE & ANOMALY VIDEOS MASTERCLASS
+     * ======================================================================= */
+
+    _learningFilter: 'ALL',
+
+    handleLearningFilter: function(filter) {
+        this._learningFilter = filter;
+        this.handleRoute();
+    },
+
+    openVideoModal: function(youtubeId, title, embedUrl) {
+        const url = embedUrl || `https://www.youtube.com/embed/${youtubeId}?autoplay=1&rel=0`;
+        const html = `
+            <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 8px; background: #000; margin-bottom: 1.25rem;">
+                <iframe 
+                    src="${url}" 
+                    title="${title.replace(/"/g, '&quot;')}" 
+                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;" 
+                    frameborder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                    referrerpolicy="strict-origin-when-cross-origin"
+                    allowfullscreen
+                ></iframe>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+                <button type="button" class="btn" onclick="window.UIModule.closeModal()">Close Player</button>
+                <a href="https://www.youtube.com/watch?v=${youtubeId}" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="font-size: 0.8125rem;">
+                    Open on YouTube ↗
+                </a>
+            </div>
+        `;
+        window.UIModule.openModal(title, html);
+    },
+
+    renderLearning: function(transactions, analysis) {
+        const { anomalies, baselines } = analysis;
+        const currentFilter = this._learningFilter || 'ALL';
+
+        // Detect user's anomaly categories to provide smart recommendations
+        const anomalyCategories = [...new Set(anomalies.map(a => a.transaction.category))];
+
+        // The 6 specific Masterclass YouTube videos
+        const videoLibrary = [
+            {
+                id: 'video-1',
+                youtubeId: '67gEoDuSuLE',
+                embedUrl: 'https://www.youtube.com/embed/67gEoDuSuLE?si=TE1A5b7aqXaRGCAt',
+                title: 'How to Treat Compulsive Shopping & Stop Impulse Spends',
+                channel: 'Uncommon Knowledge',
+                duration: '11 mins',
+                category: 'ANOMALY_CONTROL',
+                tags: ['Impulse Control', 'Shopping Spikes', 'Habits'],
+                targetAnomaly: 'Shopping',
+                description: 'Psychological and practical techniques to dismantle compulsive buying triggers and eliminate shopping outliers.'
+            },
+            {
+                id: 'video-2',
+                youtubeId: 'HQzoZfc3GwQ',
+                embedUrl: 'https://www.youtube.com/embed/HQzoZfc3GwQ?si=Z7dZA_j4X_LHUndp',
+                title: 'How to Build an Unshakeable Budget (The 50/30/20 Rule)',
+                channel: 'Ali Abdaal',
+                duration: '14 mins',
+                category: 'BUDGETING',
+                tags: ['50/30/20 Rule', 'Cashflow', 'Personal Finance'],
+                targetAnomaly: 'Food',
+                description: 'Step-by-step masterclass on tracking fixed essentials vs variable costs and avoiding sudden lifestyle creep.'
+            },
+            {
+                id: 'video-3',
+                youtubeId: 'BTXKZpv0U6A',
+                embedUrl: 'https://www.youtube.com/embed/BTXKZpv0U6A?si=m2xU1fdon2TDXmTZ',
+                title: 'The Zombie Subscription Audit: Kill the Hidden Annual Leaks',
+                channel: 'The Sketchbook Economy',
+                duration: '12 mins',
+                category: 'ANOMALY_CONTROL',
+                tags: ['Subscriptions', 'Recurring Bills', 'Auditing'],
+                targetAnomaly: 'Subscriptions',
+                description: 'How small recurring monthly charges silently inflate your expense baseline and how to systematically purge them.'
+            },
+            {
+                id: 'video-4',
+                youtubeId: 'y9sANTpOMmc',
+                embedUrl: 'https://www.youtube.com/embed/y9sANTpOMmc?si=Sc8bBl3wPj6dYKmS',
+                title: 'Sinking Funds vs Emergency Funds: Smoothing Expense Spikes',
+                channel: 'Financial Education',
+                duration: '13 mins',
+                category: 'BUDGETING',
+                tags: ['Sinking Funds', 'Travel Spikes', 'Smoothing'],
+                targetAnomaly: 'Travel',
+                description: 'How to mathematically smooth annual insurance, flight, and healthcare expenses to prevent budget volatility.'
+            },
+            {
+                id: 'video-5',
+                youtubeId: 'TJDcGv9OH4Q',
+                embedUrl: 'https://www.youtube.com/embed/TJDcGv9OH4Q?si=PhctGzRyd-dqvhYs',
+                title: 'The Psychology of Money (Morgan Housel) - Core Principles',
+                channel: 'The Swedish Investor',
+                duration: '15 mins',
+                category: 'INVESTING',
+                tags: ['Wealth Mindset', 'Long-term', 'Discipline'],
+                targetAnomaly: 'Electronics',
+                description: 'Top insights on controlling financial impulses, maintaining long-term baselines, and building lasting wealth.'
+            },
+            {
+                id: 'video-6',
+                youtubeId: 'VrVatDbo64c',
+                embedUrl: 'https://www.youtube.com/embed/VrVatDbo64c?si=Ck8W3QwNxg_bIVwN',
+                title: 'Where Does Your Money Go? The Hidden Leaks Draining You',
+                channel: 'The Sketchbook Economy',
+                duration: '11 mins',
+                category: 'INVESTING',
+                tags: ['Cashflow Leaks', 'Auditing', 'Automation'],
+                targetAnomaly: 'General',
+                description: 'Diagnose where your money leaks away each month and redirect savings into automated investments.'
+            }
+        ];
+
+        // Filter videos
+        const filteredVideos = videoLibrary.filter(v => {
+            if (currentFilter === 'BUDGETING') return v.category === 'BUDGETING';
+            if (currentFilter === 'ANOMALY_CONTROL') return v.category === 'ANOMALY_CONTROL';
+            if (currentFilter === 'INVESTING') return v.category === 'INVESTING';
+            return true;
+        });
+
+        // Generate tailored dynamic recommendation based on user anomalies
+        let anomalyTailoredMsg = '';
+        if (anomalyCategories.length > 0) {
+            anomalyTailoredMsg = `
+                <div class="card" style="margin-bottom: 2rem; border-left: 4px solid var(--status-warning); background: linear-gradient(to right, rgba(245, 158, 11, 0.08), transparent);">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+                        <div>
+                            <span class="badge badge-warning" style="margin-bottom: 0.5rem; font-size: 0.7rem;">AI ANOMALY ADVISORY</span>
+                            <h3 style="margin-bottom: 0.35rem; color: var(--text-primary);">
+                                Detected Spending Spikes in: ${anomalyCategories.map(c => `<strong>${c}</strong>`).join(', ')}
+                            </h3>
+                            <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.75rem;">
+                                Based on your recent transactions, our statistical engine identified deviations in these categories. We have highlighted the top tactical guides below to help you regain control.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        let html = `
+            <div style="margin-bottom: 2rem;">
+                <h1 style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.25rem;">
+                    Financial Intelligence Academy
+                    <span class="badge" style="background: rgba(59, 130, 246, 0.12); color: var(--accent-primary); border: 1px solid rgba(59, 130, 246, 0.3);">CURATED PLAYBOOKS</span>
+                </h1>
+                <p class="subtitle" style="margin-bottom: 0;">Expert strategies, video masterclasses, and anomaly prevention techniques to optimize your personal cashflow.</p>
+            </div>
+
+            ${anomalyTailoredMsg}
+
+            <!-- Category Filter Tabs -->
+            <div style="margin-bottom: 1.75rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                <button type="button" class="btn" style="border-radius: 9999px; font-size: 0.8125rem; ${currentFilter === 'ALL' ? 'background: var(--text-primary); color: var(--bg-base); font-weight: 600;' : ''}" onclick="AppRouter.handleLearningFilter('ALL')">
+                    All Masterclasses (${videoLibrary.length})
+                </button>
+                <button type="button" class="btn" style="border-radius: 9999px; font-size: 0.8125rem; ${currentFilter === 'ANOMALY_CONTROL' ? 'background: var(--text-primary); color: var(--bg-base); font-weight: 600;' : ''}" onclick="AppRouter.handleLearningFilter('ANOMALY_CONTROL')">
+                    Anomaly &amp; Impulse Control
+                </button>
+                <button type="button" class="btn" style="border-radius: 9999px; font-size: 0.8125rem; ${currentFilter === 'BUDGETING' ? 'background: var(--text-primary); color: var(--bg-base); font-weight: 600;' : ''}" onclick="AppRouter.handleLearningFilter('BUDGETING')">
+                    Budgeting &amp; Sinking Funds
+                </button>
+                <button type="button" class="btn" style="border-radius: 9999px; font-size: 0.8125rem; ${currentFilter === 'INVESTING' ? 'background: var(--text-primary); color: var(--bg-base); font-weight: 600;' : ''}" onclick="AppRouter.handleLearningFilter('INVESTING')">
+                    Investing &amp; Long-Term Wealth
+                </button>
+            </div>
+
+            <!-- Videos Grid -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 1.5rem;">
+                ${filteredVideos.map(video => {
+                    const isRelevantToAnomaly = anomalyCategories.includes(video.targetAnomaly);
+                    
+                    return `
+                        <div class="card" style="padding: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; ${isRelevantToAnomaly ? 'border: 1px solid var(--accent-primary); box-shadow: 0 0 15px rgba(59, 130, 246, 0.15);' : ''}">
+                            <!-- Direct Video Embed Container -->
+                            <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; background: #000;">
+                                <iframe 
+                                    src="${video.embedUrl}" 
+                                    title="${video.title}" 
+                                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;" 
+                                    frameborder="0"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                                    referrerpolicy="strict-origin-when-cross-origin"
+                                    allowfullscreen
+                                ></iframe>
+                            </div>
+
+                            <div style="padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between; flex: 1;">
+                                <div>
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                        <span class="badge" style="background: rgba(255,255,255,0.06); font-size: 0.65rem;">${video.channel} • ${video.duration}</span>
+                                        ${isRelevantToAnomaly ? '<span class="badge badge-warning" style="font-size: 0.65rem;">Recommended for You</span>' : ''}
+                                    </div>
+                                    <h3 style="font-size: 0.95rem; font-weight: 600; line-height: 1.4; margin-bottom: 0.5rem; color: var(--text-primary);">
+                                        ${video.title}
+                                    </h3>
+                                    <p style="font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 1rem;">${video.description}</p>
+                                </div>
+
+                                <div>
+                                    <div style="display: flex; gap: 0.35rem; flex-wrap: wrap; margin-bottom: 1rem;">
+                                        ${video.tags.map(t => `<span class="badge badge-outline" style="font-size: 0.65rem;">${t}</span>`).join('')}
+                                    </div>
+                                    <div style="display: flex; gap: 0.5rem;">
+                                        <button type="button" class="btn" style="flex: 1; font-size: 0.8125rem; justify-content: center;" onclick="AppRouter.openVideoModal('${video.youtubeId}', '${video.title.replace(/'/g, "\\'")}', '${video.embedUrl}')">
+                                            Expand Player
+                                        </button>
+                                        <a href="https://www.youtube.com/watch?v=${video.youtubeId}" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="font-size: 0.8125rem; padding: 0.5rem 0.85rem;" title="Open in YouTube">
+                                            Watch on YouTube ↗
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
+
         this.container.innerHTML = html;
     },
 
@@ -506,11 +1087,27 @@ const AppRouter = {
         const { baselines } = analysis;
         const insights = window.InsightsModule ? window.InsightsModule.generateInsights(transactions, baselines) : [];
 
-        // Prepare Donut Chart Data
+        // Category Palette synchronized with Canvas Charts
+        const categoryColors = [
+            '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', 
+            '#ec4899', '#14b8a6', '#f43f5e', '#6366f1', 
+            '#84cc16', '#64748b'
+        ];
+
+        // Sort categories by total descending so largest slice comes first
+        const sortedCats = Object.keys(baselines).sort((a, b) => (baselines[b].total || 0) - (baselines[a].total || 0));
+
+        // Build deterministic category color map & donut chart payload
         const categoryTotals = {};
-        for (const cat in baselines) {
-            categoryTotals[cat] = baselines[cat].total;
-        }
+        const catColorMap = {};
+        let grandTotal = 0;
+
+        sortedCats.forEach((cat, idx) => {
+            const catTotal = baselines[cat].total || 0;
+            categoryTotals[cat] = catTotal;
+            catColorMap[cat] = categoryColors[idx % categoryColors.length];
+            grandTotal += catTotal;
+        });
 
         let html = `
             <div style="margin-bottom: 2rem;">
@@ -547,18 +1144,22 @@ const AppRouter = {
                 <div class="card">
                     <h3 style="margin-bottom: 1.25rem;">Category Spending Breakdown</h3>
                     <div style="display: flex; flex-direction: column; max-height: 300px; overflow-y: auto; gap: 0.85rem; padding-right: 0.35rem; padding-top: 0.25rem;">
-                        ${Object.keys(baselines).sort((a, b) => (baselines[b].total || 0) - (baselines[a].total || 0)).map(cat => {
+                        ${sortedCats.map((cat, idx) => {
                             const b = baselines[cat];
-                            const total = Object.values(categoryTotals).reduce((a, b) => a + b, 0);
-                            const pct = total > 0 ? (b.total / total) * 100 : 0;
+                            const pct = grandTotal > 0 ? (b.total / grandTotal) * 100 : 0;
+                            const barColor = catColorMap[cat] || categoryColors[idx % categoryColors.length];
+
                             return `
                                 <div class="horizontal-bar-container" style="margin-bottom: 0;">
-                                    <div class="horizontal-bar-label">
-                                        <span style="font-weight: 500; color: var(--text-primary);">${cat}</span>
-                                        <span style="font-family: monospace; color: var(--text-secondary);">${window.UIModule.formatCurrency(b.total)} (${pct.toFixed(0)}%)</span>
+                                    <div class="horizontal-bar-label" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                                        <span style="display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 500; color: var(--text-primary);">
+                                            <span style="display: inline-block; width: 9px; height: 9px; border-radius: 50%; background-color: ${barColor}; flex-shrink: 0;"></span>
+                                            ${cat}
+                                        </span>
+                                        <span style="font-family: monospace; color: var(--text-secondary); font-size: 0.8125rem;">${window.UIModule.formatCurrency(b.total)} (${pct.toFixed(0)}%)</span>
                                     </div>
                                     <div class="horizontal-bar-track">
-                                        <div class="horizontal-bar-fill" style="width: ${pct}%; background-color: var(--accent-primary);"></div>
+                                        <div class="horizontal-bar-fill" style="width: ${pct}%; background-color: ${barColor};"></div>
                                     </div>
                                 </div>
                             `;
@@ -581,7 +1182,7 @@ const AppRouter = {
                             </tr>
                         </thead>
                         <tbody>
-                            ${Object.keys(baselines).sort((a,b) => baselines[b].total - baselines[a].total).map(cat => {
+                            ${sortedCats.map(cat => {
                                 const b = baselines[cat];
                                 const isInsufficient = b.insufficientData || b.count < 3;
                                 
@@ -664,7 +1265,8 @@ const AppRouter = {
                     <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
                         <button class="btn" onclick="AppRouter.openImportModal()">Import CSV</button>
                         <button class="btn" onclick="AppRouter.exportTransactionsCsv()">Export CSV</button>
-                        <button class="btn" style="border-color: var(--status-danger); color: var(--status-danger);" onclick="AppRouter.resetData()">Reset Demo Dataset</button>
+                        <button class="btn" onclick="AppRouter.loadDemoData()">Load Sample Demo Dataset</button>
+                        <button class="btn" style="border-color: var(--status-danger); color: var(--status-danger);" onclick="AppRouter.clearAllData()">Clear All My Transactions</button>
                     </div>
                 </div>
             </div>
@@ -682,18 +1284,32 @@ const AppRouter = {
         this.handleRoute();
     },
 
-    resetData: function() {
-        if(confirm('Are you sure you want to reset your transactions and reload the initial demo dataset?')) {
+    loadDemoData: function() {
+        if(confirm('Load sample transactions into your account for testing statistical anomaly detection?')) {
             const currentUser = window.StorageModule.getCurrentUser ? window.StorageModule.getCurrentUser() : null;
             if (currentUser) {
-                window.StorageModule.clearUserTransactions(currentUser.email);
                 if (window.StorageModule.seedDemoDataForUser) {
                     window.StorageModule.seedDemoDataForUser(currentUser.email);
                 }
             }
-            window.UIModule.showToast('Demo dataset loaded successfully', 'success');
+            window.UIModule.showToast('Sample dataset loaded successfully!', 'success');
             this.handleRoute();
         }
+    },
+
+    clearAllData: function() {
+        if(confirm('Are you sure you want to clear all transactions for your account? This cannot be undone.')) {
+            const currentUser = window.StorageModule.getCurrentUser ? window.StorageModule.getCurrentUser() : null;
+            if (currentUser) {
+                window.StorageModule.clearUserTransactions(currentUser.email);
+            }
+            window.UIModule.showToast('All your transactions have been cleared.', 'info');
+            this.handleRoute();
+        }
+    },
+
+    resetData: function() {
+        this.loadDemoData();
     },
 
     inspectAnomaly: function(anomaly) {
@@ -1039,19 +1655,19 @@ const AppRouter = {
         const html = `
             <div style="margin-bottom: 1.5rem;">
                 <p style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.75rem;">
-                    Upload a <code>.csv</code> file or paste CSV text below. Headers: <code>date, category, amount, description</code>.
+                    Upload a <code>.csv</code> file or paste CSV text below. Standard columns (<code>Date, Category, Amount</code>) are automatically mapped.
                 </p>
                 <div style="margin-bottom: 1rem;">
                     <input type="file" id="csvFileInput" accept=".csv,text/csv" class="form-input" style="padding: 0.5rem;" onchange="AppRouter.handleCsvFileUpload(event)">
                 </div>
                 <div style="text-align: center; color: var(--text-tertiary); font-size: 0.75rem; margin-bottom: 0.75rem;">— OR PASTE RAW CSV CONTENT —</div>
-                <textarea id="csvData" class="form-input" style="height: 140px; font-family: monospace; font-size: 0.75rem;" placeholder="date, category, amount, description&#10;2026-08-15, Shopping, 14500, Anomaly electronics purchase"></textarea>
+                <textarea id="csvData" class="form-input" style="height: 150px; font-family: monospace; font-size: 0.75rem;" placeholder="Transaction_ID,Date,Amount,Category,Merchant,Payment_Method&#10;TXN01,2026-01-01,150.00,Food,Local Diner,UPI"></textarea>
             </div>
-            <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
                 <button type="button" class="btn" onclick="AppRouter.downloadSampleCsv()">Download Sample CSV</button>
                 <div style="display: flex; gap: 0.75rem;">
                     <button type="button" class="btn" onclick="window.UIModule.closeModal()">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="AppRouter.submitCsvImport()">Import Data</button>
+                    <button type="button" class="btn btn-primary" onclick="AppRouter.submitCsvImport(event)">Import Data</button>
                 </div>
             </div>
         `;
@@ -1070,8 +1686,12 @@ const AppRouter = {
         reader.readAsText(file);
     },
 
-    submitCsvImport: function() {
-        const text = document.getElementById('csvData').value;
+    submitCsvImport: function(e) {
+        if (e) e.preventDefault();
+
+        const textarea = document.getElementById('csvData');
+        const text = textarea ? textarea.value : '';
+
         if (!text.trim()) {
             window.UIModule.showToast('Please paste or upload CSV data first.', 'warning');
             return;
@@ -1080,28 +1700,42 @@ const AppRouter = {
         const currentUser = window.StorageModule.getCurrentUser ? window.StorageModule.getCurrentUser() : null;
         const userEmail = currentUser ? currentUser.email : 'demo@aurelis.io';
 
-        // Use CSVModule or DataModule parser
+        // Parse with CSVModule or fallback to DataModule
         let result = null;
         if (window.CSVModule && window.CSVModule.parseCSVText) {
             result = window.CSVModule.parseCSVText(text, userEmail);
         } else if (window.DataModule && window.DataModule.parseCSV) {
-            result = window.DataModule.parseCSV(text);
+            result = window.DataModule.parseCSV(text, userEmail);
         }
 
         if (result && (result.valid || result.transactions)) {
             const txns = result.valid || result.transactions || [];
             if (txns.length > 0) {
+                // Ensure every transaction has the current user ID
+                txns.forEach(tx => {
+                    tx.userId = userEmail;
+                });
+
                 const currentTxs = window.StorageModule.getTransactionsForUser(userEmail) || [];
                 const all = window.StorageModule.getAllTransactions();
                 const otherUserTxs = all.filter(tx => tx.userId !== userEmail);
+
                 window.StorageModule.saveAllTransactions([...txns, ...currentTxs, ...otherUserTxs]);
                 window.UIModule.closeModal();
-                window.UIModule.showToast(`Imported ${txns.length} transactions successfully!`, 'success');
-                setTimeout(() => this.handleRoute(), 100);
+                
+                let toastMsg = `Imported ${txns.length} transaction${txns.length > 1 ? 's' : ''} successfully!`;
+                if (result.invalidCount > 0) {
+                    toastMsg += ` (${result.invalidCount} invalid rows skipped)`;
+                }
+                window.UIModule.showToast(toastMsg, 'success');
+                
+                this.handleRoute();
                 return;
             }
         }
-        window.UIModule.showToast('Failed to parse CSV. Please check required columns: date, category, amount.', 'error');
+        
+        const err = result && result.errors && result.errors[0] ? result.errors[0] : 'Failed to parse CSV. Please check columns: Date, Amount, Category.';
+        window.UIModule.showToast(err, 'error');
     }
 };
 

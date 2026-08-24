@@ -137,56 +137,76 @@ const DataModule = {
         return list[Math.floor(Math.random() * list.length)];
     },
 
-    parseCSV: function(csvText) {
-        const lines = csvText.trim().split('\n');
-        if (lines.length < 2) return { success: false, error: 'Empty or invalid CSV' };
+    parseCSV: function(csvText, userId) {
+        if (window.CSVModule && typeof window.CSVModule.parseCSVText === 'function') {
+            const user = userId || (window.StorageModule.getCurrentUser() ? window.StorageModule.getCurrentUser().email : 'demo@aurelis.io');
+            const res = window.CSVModule.parseCSVText(csvText, user);
+            return { success: res.valid.length > 0, valid: res.valid, invalidCount: res.invalidCount, errors: res.errors };
+        }
 
-        const headers = lines[0].toLowerCase().split(',').map(h => h.trim());
+        const user = userId || (window.StorageModule.getCurrentUser() ? window.StorageModule.getCurrentUser().email : 'demo@aurelis.io');
+        const lines = csvText.trim().split(/\r\n|\n/);
+        if (lines.length < 2) return { success: false, valid: [], invalidCount: 0, error: 'Empty or invalid CSV' };
+
+        const headers = lines[0].toLowerCase().split(',').map(h => h.trim().replace(/^["']|["']$/g, ''));
         const validTransactions = [];
         let invalidCount = 0;
 
         for (let i = 1; i < lines.length; i++) {
-            const row = lines[i].split(',').map(c => c.trim());
-            if (row.length !== headers.length) {
+            const row = lines[i].split(',').map(c => c.trim().replace(/^["']|["']$/g, ''));
+            if (row.length < 2) {
                 invalidCount++;
                 continue;
             }
 
-            const tx = { id: `TXN-IMP-${Date.now()}-${i}` };
+            const tx = { 
+                id: `TXN-IMP-${Date.now()}-${i}`,
+                userId: user
+            };
             let isValid = true;
 
             for (let j = 0; j < headers.length; j++) {
                 const header = headers[j];
-                const value = row[j];
+                const value = row[j] || '';
 
-                if (header === 'date') {
-                    const dateObj = new Date(value);
-                    if (isNaN(dateObj.getTime())) isValid = false;
-                    tx.date = value;
-                    tx.timestamp = dateObj.getTime();
-                } else if (header === 'amount') {
-                    const amt = parseFloat(value);
-                    if (isNaN(amt)) isValid = false;
+                if (header.includes('date') || header === 'time' || header === 'datetime') {
+                    const parsedD = new Date(value.replace(' ', 'T'));
+                    const validD = !isNaN(parsedD.getTime()) ? parsedD : new Date(value);
+                    if (isNaN(validD.getTime())) {
+                        tx.date = new Date().toISOString().split('T')[0];
+                        tx.timestamp = Date.now();
+                    } else {
+                        tx.date = validD.toISOString().split('T')[0];
+                        tx.timestamp = validD.getTime();
+                    }
+                } else if (header.includes('amount') || header === 'cost' || header === 'price') {
+                    const amt = parseFloat(value.replace(/[$,₹€£]/g, ''));
+                    if (isNaN(amt) || amt <= 0) isValid = false;
                     tx.amount = amt;
-                } else if (header === 'recurring') {
+                } else if (header.includes('recurring')) {
                     tx.recurring = value.toLowerCase() === 'true' || value === '1';
-                } else {
-                    tx[header] = value;
+                } else if (header.includes('category')) {
+                    tx.category = value || 'Other';
+                } else if (header.includes('merchant') || header.includes('description') || header === 'details' || header === 'location') {
+                    tx.merchant = value;
+                    tx.description = value;
+                } else if (header.includes('method')) {
+                    tx.paymentMethod = value;
                 }
             }
 
-            if (!tx.merchant) tx.merchant = 'Unknown Merchant';
-            if (!tx.category || !this.CATEGORIES.includes(tx.category)) tx.category = 'Other';
-            if (!tx.paymentMethod) tx.paymentMethod = 'Unknown';
+            if (!tx.merchant) tx.merchant = `${tx.category || 'Expense'} Purchase`;
+            if (!tx.category) tx.category = 'Other';
+            if (!tx.paymentMethod) tx.paymentMethod = 'Credit Card';
 
-            if (isValid) {
+            if (isValid && tx.amount) {
                 validTransactions.push(tx);
             } else {
                 invalidCount++;
             }
         }
 
-        return { success: true, valid: validTransactions, invalidCount };
+        return { success: validTransactions.length > 0, valid: validTransactions, invalidCount };
     }
 };
 

@@ -366,6 +366,73 @@ body {
     gap: 1.25rem;
 }
 
+.calc-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+}
+
+.calc-label {
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.calc-select,
+.calc-input {
+    background-color: var(--bg-base);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 0.65rem 0.85rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-family: inherit;
+    outline: none;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.calc-select:focus,
+.calc-input:focus {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 2px var(--accent-primary-alpha);
+}
+
+.calc-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    background: var(--border-color);
+    border-radius: 4px;
+    outline: none;
+    margin: 0.5rem 0 0.25rem 0;
+}
+
+.calc-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--accent-primary);
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+    transition: transform 0.15s ease;
+}
+
+.calc-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+}
+
+.calc-slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--accent-primary);
+    cursor: pointer;
+    border: none;
+}
+
 .calc-output {
     background-color: var(--bg-base);
     border: 1px solid var(--border-color);
@@ -400,6 +467,7 @@ body {
     font-weight: 600;
     text-align: center;
     letter-spacing: 0.04em;
+    border: 1px solid transparent;
 }
 
 /* ── Steps / How It Works Grid ─────────────────────────────────────────────── */

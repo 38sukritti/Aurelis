@@ -1,17 +1,12 @@
-<!-- =============================================================================
-     COMMIT NO. 01
-     COMMIT BY: Harshita
-     COMMIT MESSAGE: feat(landing): build interactive landing page with statistical simulator
-     ============================================================================= -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>AURELIS — Know When Your Spending Looks Unusual</title>
-    <meta name="description" content="AURELIS is a personal financial intelligence platform that uses statistical z-score analysis to identify spending anomalies based on your own historical baseline.">
-    <meta name="keywords" content="expense tracker, anomaly detection, spending analysis, z-score, personal finance, financial intelligence">
+    <title>AURELIS — Private Financial & Expense Intelligence</title>
+    <meta name="description" content="AURELIS is a personal financial intelligence platform that learns your unique spending baseline to flag outliers, recurring spikes, and budget leaks in real time.">
+    <meta name="keywords" content="personal finance, expense intelligence, spending analysis, budget tracker, wealth monitoring, private finance">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -34,10 +29,10 @@
     </div>
 
     <div class="nav-links">
-        <a href="#about" class="nav-link">About</a>
+        <a href="#philosophy" class="nav-link">Philosophy</a>
         <a href="#how-it-works" class="nav-link">How It Works</a>
-        <a href="#calculator" class="nav-link">Live Simulator</a>
-        <a href="#features" class="nav-link">Features</a>
+        <a href="#simulator" class="nav-link">Interactive Sandbox</a>
+        <a href="#features" class="nav-link">Capabilities</a>
     </div>
 
     <div class="nav-actions">
@@ -52,40 +47,39 @@
 
         <div class="hero-badge">
             <span class="hero-badge-dot" aria-hidden="true"></span>
-            Statistical Anomaly Detection Engine
+            Personalized Spending Intelligence
         </div>
 
         <h1 class="hero-title" id="hero-heading">
-            Know When Your<br>
-            <strong>Spending Looks Unusual.</strong>
+            Master Your Cashflow.<br>
+            <strong>Spot What Others Miss.</strong>
         </h1>
 
         <p class="hero-subtitle">
-            Most budget trackers only record what you spent. AURELIS learns your historical spending baseline
-            and mathematically flags anomalies using statistical z-score analysis — tailored specifically to you.
+            Most expense trackers force you into rigid, arbitrary budgets. AURELIS learns your authentic historical patterns, establishing a personal baseline for each category to surface genuine spending spikes, silent subscriptions, and lifestyle creep.
         </p>
 
         <div class="hero-cta">
             <a href="login.html" class="btn btn-primary" id="hero-cta-primary">
-                Launch Workspace
+                Open Workspace &rarr;
             </a>
-            <a href="#calculator" class="btn" id="hero-cta-secondary">
-                Try Live Simulator ↓
+            <a href="#simulator" class="btn" id="hero-cta-secondary">
+                Try Interactive Sandbox ↓
             </a>
         </div>
 
         <div class="hero-stats-strip">
             <div class="stat-item">
-                <div class="stat-number">3.0σ</div>
-                <div class="stat-label">Standard Threshold</div>
+                <div class="stat-number">Adaptive</div>
+                <div class="stat-label">Personal Baselines</div>
             </div>
             <div class="stat-item">
-                <div class="stat-number">100%</div>
-                <div class="stat-label">Local &amp; Private Data</div>
+                <div class="stat-number">100% Private</div>
+                <div class="stat-label">Local Device Storage</div>
             </div>
             <div class="stat-item">
-                <div class="stat-number">0.0s</div>
-                <div class="stat-label">Instant CSV Processing</div>
+                <div class="stat-number">Instant</div>
+                <div class="stat-label">Statement CSV Import</div>
             </div>
         </div>
 
@@ -93,112 +87,114 @@
 </section>
 
 <!-- ── Problem Statement Section ───────────────────────────────────────────── -->
-<div class="section-divider" id="about"></div>
+<div class="section-divider" id="philosophy"></div>
 
 <section class="section" aria-labelledby="problem-heading">
-    <div class="section-label">The Problem</div>
+    <div class="section-label">The Core Difference</div>
     <h2 class="section-title" id="problem-heading">
-        Standard apps give you arbitrary budgets.<br>
-        They can't detect <em>real personal outliers</em>.
+        Static budgets fail because spending is personal.<br>
+        Context changes everything.
     </h2>
     <p class="section-body">
-        A ₹5,000 restaurant dinner might be totally normal for an executive, yet a severe outlier for a college student.
-        Fixed budget alerts fail because they ignore personal variation. AURELIS builds an individualized statistical
-        baseline for each of your spending categories.
+        A ₹4,000 dinner might be normal for a celebratory weekend, but unusual for a Tuesday lunch. Fixed monthly caps don't tell you if a transaction is truly anomalous. AURELIS calculates deviation relative to your historical distribution in each category.
     </p>
 
     <!-- Example Comparison Grid -->
-    <div class="example-grid" aria-label="Example comparison of normal versus anomaly spending">
+    <div class="example-grid" aria-label="Example comparison of baseline spending">
         
         <div class="example-card normal-card">
             <div class="example-header">
-                <span class="example-tag normal">✓ Normal Transaction</span>
-                <span style="color: var(--text-tertiary); font-size: 0.8rem;">Food Category</span>
+                <span class="example-tag normal">Typical Pattern</span>
+                <span style="color: var(--text-tertiary); font-size: 0.8rem;">Dining Out</span>
             </div>
             <div class="example-amount">₹420</div>
-            <div class="example-meta">Personal Baseline: Mean = ₹400, StdDev (σ) = ₹100</div>
+            <div class="example-meta">Baseline Profile: Mean = ₹400 &bull; Spread (σ) = ₹100</div>
             <div class="example-explanation">
-                This transaction sits comfortably within 0.2 standard deviations from your normal spending average.
+                Aligned with your typical routine spending. Sits comfortably within standard variation for weekday meals.
                 <br>
-                <span class="example-math-pill">z = (420 - 400) / 100 = +0.20σ (Normal)</span>
+                <span class="example-math-pill">+0.20σ from personal baseline (Normal)</span>
             </div>
         </div>
 
         <div class="example-card anomaly-card">
             <div class="example-header">
-                <span class="example-tag anomaly">⚠ Statistical Anomaly</span>
-                <span style="color: var(--text-tertiary); font-size: 0.8rem;">Food Category</span>
+                <span class="example-tag anomaly">Anomaly Detected</span>
+                <span style="color: var(--text-tertiary); font-size: 0.8rem;">Dining Out</span>
             </div>
-            <div class="example-amount">₹1,250</div>
-            <div class="example-meta">Personal Baseline: Mean = ₹400, StdDev (σ) = ₹100</div>
+            <div class="example-amount">₹1,850</div>
+            <div class="example-meta">Baseline Profile: Mean = ₹400 &bull; Spread (σ) = ₹100</div>
             <div class="example-explanation">
-                This charge is 8.5 standard deviations above your personal average — an extreme statistical outlier.
+                Material outlier detected. This charge exceeds your normal dining baseline by more than 14 standard deviations.
                 <br>
-                <span class="example-math-pill" style="color: var(--status-danger);">z = (1250 - 400) / 100 = +8.50σ (High Anomaly)</span>
+                <span class="example-math-pill" style="color: var(--status-danger);">+14.50σ Outlier Flag (Requires Review)</span>
             </div>
         </div>
 
     </div>
 </section>
 
-<!-- ── Interactive Calculator Widget ───────────────────────────────────────── -->
-<div class="section-divider" id="calculator"></div>
+<!-- ── Interactive Sandbox Calculator ──────────────────────────────────────── -->
+<div class="section-divider" id="simulator"></div>
 
 <section class="section" aria-labelledby="calc-heading">
-    <div class="section-label">Interactive Demonstration</div>
-    <h2 class="section-title" id="calc-heading">Test the Z-Score Engine in Real Time</h2>
+    <div class="section-label">Interactive Sandbox</div>
+    <h2 class="section-title" id="calc-heading">Experience Baseline Intelligence</h2>
     <p class="section-body">
-        Select a category profile below, enter a hypothetical transaction amount, and see how AURELIS calculates the
-        standard deviation distance and flags potential outliers.
+        Adjust transaction values and sensitivity thresholds to see how AURELIS categorizes routine charges versus genuine outliers in real time.
     </p>
 
-    <div class="interactive-calculator">
+    <div class="interactive-calculator" aria-label="Interactive baseline simulator">
         <div class="calc-grid">
+
             <div class="calc-inputs">
-                <div class="form-group">
-                    <label class="form-label" for="sim-category">Select Category Baseline</label>
-                    <select id="sim-category" class="form-select" style="background-color: var(--bg-base); color: var(--text-primary); border: 1px solid var(--border-color); padding: 0.65rem; border-radius: 6px;">
-                        <option value="Food" data-mean="450" data-std="120">Food &amp; Dining (Mean: ₹450, σ: ₹120)</option>
-                        <option value="Travel" data-mean="300" data-std="80">Travel &amp; Commute (Mean: ₹300, σ: ₹80)</option>
-                        <option value="Shopping" data-mean="2200" data-std="600">Shopping (Mean: ₹2,200, σ: ₹600)</option>
-                        <option value="Bills" data-mean="1500" data-std="200">Utility Bills (Mean: ₹1,500, σ: ₹200)</option>
+                <div class="calc-group">
+                    <label class="calc-label" for="sim-category">Category</label>
+                    <select id="sim-category" class="calc-select" aria-label="Select Category">
+                        <option value="Dining" data-mean="400" data-std="90">Dining Out (Avg: ₹400, σ: ₹90)</option>
+                        <option value="Groceries" data-mean="2800" data-std="450">Groceries (Avg: ₹2,800, σ: ₹450)</option>
+                        <option value="Subscriptions" data-mean="650" data-std="60">Subscriptions (Avg: ₹650, σ: ₹60)</option>
+                        <option value="Travel" data-mean="3200" data-std="800">Travel &amp; Cab (Avg: ₹3,200, σ: ₹800)</option>
+                        <option value="Shopping" data-mean="1800" data-std="500">Shopping (Avg: ₹1,800, σ: ₹500)</option>
                     </select>
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label" for="sim-amount">Test Transaction Amount (₹)</label>
-                    <input type="number" id="sim-amount" class="form-input" value="1200" min="1" step="10">
+                <div class="calc-group">
+                    <label class="calc-label" for="sim-amount">Test Transaction Amount (₹)</label>
+                    <input type="number" id="sim-amount" class="calc-input" value="1250" min="1" step="10" placeholder="e.g. 1250">
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label" for="sim-threshold">Z-Score Threshold (σ)</label>
-                    <div style="display: flex; align-items: center; gap: 1rem;">
-                        <input type="range" id="sim-threshold" min="2.0" max="4.0" step="0.1" value="3.0" style="flex: 1; accent-color: var(--accent-primary);">
-                        <span id="sim-threshold-val" style="font-family: monospace; font-weight: 600; color: var(--accent-primary);">3.0σ</span>
+                <div class="calc-group">
+                    <label class="calc-label" for="sim-threshold">
+                        Sensitivity Threshold: <strong id="sim-threshold-val" style="color: var(--accent-primary);">3.0σ</strong>
+                    </label>
+                    <input type="range" id="sim-threshold" class="calc-slider" min="2.0" max="4.0" step="0.1" value="3.0">
+                    <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--text-tertiary); margin-top:0.25rem;">
+                        <span>Sensitive (2.0σ)</span>
+                        <span>Balanced (3.0σ)</span>
+                        <span>High Tolerance (4.0σ)</span>
                     </div>
                 </div>
             </div>
 
-            <div class="calc-output">
+            <div class="calc-output" aria-live="polite" aria-label="Calculation output">
                 <div class="calc-metric-row">
-                    <span class="calc-metric-label">Historical Mean (μ):</span>
-                    <span class="calc-metric-val" id="sim-out-mean">₹450</span>
+                    <span class="calc-metric-label">Category Mean (μ)</span>
+                    <span class="calc-metric-val" id="sim-out-mean">₹400</span>
                 </div>
                 <div class="calc-metric-row">
-                    <span class="calc-metric-label">Std Deviation (σ):</span>
-                    <span class="calc-metric-val" id="sim-out-std">₹120</span>
+                    <span class="calc-metric-label">Standard Deviation (σ)</span>
+                    <span class="calc-metric-val" id="sim-out-std">₹90</span>
                 </div>
                 <div class="calc-metric-row">
-                    <span class="calc-metric-label">Calculated Z-Score (z):</span>
-                    <span class="calc-metric-val" id="sim-out-z" style="color: var(--status-danger);">+6.25σ</span>
+                    <span class="calc-metric-label">Z-Score Deviation</span>
+                    <span class="calc-metric-val" id="sim-out-z" style="font-size: 1.1rem; font-weight: 700;">+9.44σ</span>
                 </div>
-                <div class="calc-metric-row" style="margin-top: 0.5rem; padding-top: 0.75rem; border-top: 1px solid var(--border-color);">
-                    <span class="calc-metric-label">Detection Status:</span>
-                    <span class="calc-badge" id="sim-out-status" style="background-color: var(--status-danger-bg); color: var(--status-danger); border: 1px solid rgba(239, 68, 68, 0.3);">
-                        CRITICAL ANOMALY
-                    </span>
+                <div class="calc-metric-row" style="padding-top: 0.75rem; border-top: 1px solid var(--border-color);">
+                    <span class="calc-metric-label">Classification</span>
+                    <span class="calc-badge" id="sim-out-status">CRITICAL ANOMALY</span>
                 </div>
             </div>
+
         </div>
     </div>
 </section>
@@ -207,10 +203,10 @@
 <div class="section-divider" id="how-it-works"></div>
 
 <section class="section" aria-labelledby="steps-heading">
-    <div class="section-label">The Math &amp; Mechanics</div>
-    <h2 class="section-title" id="steps-heading">How AURELIS Works in 4 Steps</h2>
+    <div class="section-label">The Pipeline</div>
+    <h2 class="section-title" id="steps-heading">Continuous Financial Clarity</h2>
     <p class="section-body">
-        Every transaction you add or import goes through a rigorous four-stage mathematical pipeline.
+        Every transaction you record or import effortlessly builds your personal financial intelligence model.
     </p>
 
     <div class="steps-grid">
@@ -218,31 +214,31 @@
             <div class="step-number">1</div>
             <h3 class="step-title">Categorization</h3>
             <p class="step-desc">
-                Transactions are partitioned into specific categories (Food, Travel, Bills, etc.) to establish localized context.
+                Transactions are partitioned by purpose (Groceries, Bills, Transport, Dining) to isolate distinct habit profiles.
             </p>
         </div>
 
         <div class="step-card">
             <div class="step-number">2</div>
-            <h3 class="step-title">Baseline Computation</h3>
+            <h3 class="step-title">Baseline Learning</h3>
             <p class="step-desc">
-                For each category, the arithmetic mean (μ) and population standard deviation (σ) are calculated across your history.
+                The platform computes your authentic rolling mean and standard deviation across your unique spending history.
             </p>
         </div>
 
         <div class="step-card">
             <div class="step-number">3</div>
-            <h3 class="step-title">Z-Score Calculation</h3>
+            <h3 class="step-title">Deviation Detection</h3>
             <p class="step-desc">
-                Every transaction receives a z-score: <code>z = (amount - μ) / σ</code>, quantifying exact deviation from baseline.
+                New charges are evaluated against their category baseline to measure variance, unexpected fee jumps, and outliers.
             </p>
         </div>
 
         <div class="step-card">
             <div class="step-number">4</div>
-            <h3 class="step-title">Anomaly Flagging</h3>
+            <h3 class="step-title">Actionable Insights</h3>
             <p class="step-desc">
-                If <code>|z| &ge; threshold</code> (e.g. 3.0σ), the transaction is immediately flagged with severity classification.
+                Anomalies are flagged in your executive dashboard with curated tactical masterclasses to help you plug leaks immediately.
             </p>
         </div>
     </div>
@@ -252,17 +248,17 @@
 <div class="section-divider" id="features"></div>
 
 <section class="section" aria-labelledby="features-heading">
-    <div class="section-label">Core Capabilities</div>
-    <h2 class="section-title" id="features-heading">Engineered for Financial Intelligence</h2>
+    <div class="section-label">Key Highlights</div>
+    <h2 class="section-title" id="features-heading">Built for Speed, Privacy, and Control</h2>
 
     <div class="features-grid">
         <div class="feature-card">
             <div class="feature-icon">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
             </div>
-            <h3 class="feature-title">Batch CSV Import</h3>
+            <h3 class="feature-title">Universal CSV Import</h3>
             <p class="feature-desc">
-                Import statements from your bank, credit card, or spreadsheet with instant parsing and automatic validation.
+                Seamlessly import statements from your banks, credit cards, or spreadsheets with automated column mapping.
             </p>
         </div>
 
@@ -270,19 +266,19 @@
             <div class="feature-icon">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
             </div>
-            <h3 class="feature-title">User Data Isolation</h3>
+            <h3 class="feature-title">Strict Data Isolation</h3>
             <p class="feature-desc">
-                Support for multiple user profiles. Each user's spending data is strictly segregated and calculated independently.
+                Support for multiple user accounts. Each account maintains its own private, segregated transaction ledger.
             </p>
         </div>
 
         <div class="feature-card">
             <div class="feature-icon">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
             </div>
-            <h3 class="feature-title">Configurable Sensitivity</h3>
+            <h3 class="feature-title">Integrated Academy</h3>
             <p class="feature-desc">
-                Tune your anomaly sensitivity from 2.0σ to 4.0σ to match your personal tolerance for spending variance.
+                Dynamic video masterclasses and financial playbooks curated to target your exact identified spending vulnerabilities.
             </p>
         </div>
     </div>
@@ -290,21 +286,21 @@
 
 <!-- ── Call to Action Banner ───────────────────────────────────────────────── -->
 <div class="cta-banner">
-    <h2>Ready to understand your real spending patterns?</h2>
-    <p>Sign in to your private workspace, import your transactions, and let the mathematical engine do the rest.</p>
-    <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-        <a href="login.html" class="btn btn-primary" style="padding: 0.75rem 2rem; font-size: 1rem;">Sign In / Get Started</a>
+    <h2>Take control of your financial baseline.</h2>
+    <p>Sign in to your private workspace, import your bank statements, and discover actionable spending intelligence.</p>
+    <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-top: 1rem;">
+        <a href="login.html" class="btn btn-primary" style="padding: 0.75rem 2rem; font-size: 1rem;">Sign In / Launch Workspace</a>
     </div>
 </div>
 
 <!-- ── Footer ──────────────────────────────────────────────────────────────── -->
-<footer class="landing-footer">
+<footer class="landing-footer" style="padding: 2.5rem 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; border-top: 1px solid var(--border-color);">
     <div>
-        <div class="footer-brand">AURELIS</div>
-        <div class="footer-text">Personal Spending Anomaly Intelligence</div>
+        <div class="footer-brand" style="font-weight: 700; letter-spacing: 0.12em;">AURELIS</div>
+        <div class="footer-text" style="font-size: 0.8125rem; color: var(--text-tertiary);">Personal Wealth &amp; Spending Intelligence</div>
     </div>
-    <div class="footer-text">
-        Vanilla JS &bull; LocalStorage &bull; Statistical Z-Score Engine
+    <div class="footer-text" style="font-size: 0.8125rem; color: var(--text-tertiary);">
+        &copy; 2026 AURELIS. Private, local-first personal finance platform.
     </div>
 </footer>
 
@@ -323,8 +319,8 @@
 
         const updateSimulator = () => {
             const selectedOpt = catSelect.options[catSelect.selectedIndex];
-            const mean = parseFloat(selectedOpt.getAttribute('data-mean')) || 450;
-            const std = parseFloat(selectedOpt.getAttribute('data-std')) || 120;
+            const mean = parseFloat(selectedOpt.getAttribute('data-mean')) || 400;
+            const std = parseFloat(selectedOpt.getAttribute('data-std')) || 90;
             const amount = parseFloat(amountInput.value) || 0;
             const threshold = parseFloat(thresholdInput.value) || 3.0;
 
@@ -363,11 +359,12 @@
             }
         };
 
-        catSelect.addEventListener('change', updateSimulator);
-        amountInput.addEventListener('input', updateSimulator);
-        thresholdInput.addEventListener('input', updateSimulator);
-
-        updateSimulator();
+        if (catSelect && amountInput && thresholdInput) {
+            catSelect.addEventListener('change', updateSimulator);
+            amountInput.addEventListener('input', updateSimulator);
+            thresholdInput.addEventListener('input', updateSimulator);
+            updateSimulator();
+        }
 
         // ── Authentication Session Recognition ──────────────────────────────
         (function() {
