@@ -1,0 +1,14 @@
+# Dependencies
+node_modules/
+
+# Secrets - keep .env.example, never the real .env
+.env
+.env.*
+!.env.example
+
+# Test coverage, logs and temporary files
+coverage/
+*.log
+npm-debug.log*
+*.tmp
+.DS_Store

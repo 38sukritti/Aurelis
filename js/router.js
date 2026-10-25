@@ -44,7 +44,7 @@ const AppRouter = {
             }
         });
 
-        // Fetch user data from LocalStorage
+        // Read the user's data (loaded from the API by StorageModule)
         const currentUser = window.StorageModule.getCurrentUser ? window.StorageModule.getCurrentUser() : null;
         let transactions = [];
         if (currentUser && window.StorageModule.getTransactionsForUser) {
@@ -387,7 +387,7 @@ const AppRouter = {
             statusMetricColor = 'var(--status-warning)';
         }
 
-        // Real Category Spending derived from LocalStorage
+        // Real Category Spending derived from the saved transactions
         const categoryTotals = {};
         let totalSpend = 0;
         transactions.forEach(tx => {
@@ -1227,7 +1227,7 @@ const AppRouter = {
         let html = `
             <div style="margin-bottom: 2rem;">
                 <h1>Settings & Data</h1>
-                <p class="subtitle">Configure detection parameters and manage local data.</p>
+                <p class="subtitle">Configure detection parameters and manage your data.</p>
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
@@ -1252,7 +1252,7 @@ const AppRouter = {
                 <div class="card">
                     <h3 style="margin-bottom: 1.5rem; color: var(--status-success);">Statistical Engine Info</h3>
                     <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.6;">
-                        Phase 1 uses <strong>Z-Score Statistical Detection</strong> computed per category (mean + standard deviation) over your LocalStorage records.
+                        Phase 1 uses <strong>Z-Score Statistical Detection</strong> computed per category (mean + standard deviation) over your saved transaction records.
                     </p>
                     <div style="margin-top: 1rem; font-family: monospace; font-size: 0.75rem; color: var(--accent-primary);">
                         Formula: Z = (Amount - Mean) / StandardDeviation
@@ -1278,33 +1278,38 @@ const AppRouter = {
      * ACTIONS, MODALS & UTILITIES
      * ======================================================================= */
 
-    updateSetting: function(key, value) {
-        window.StorageModule.updateSetting(key, value);
-        window.UIModule.showToast(`Updated threshold to ${value}σ`, 'success');
+    updateSetting: async function(key, value) {
+        try {
+            await window.StorageModule.updateSetting(key, value);
+            window.UIModule.showToast(`Updated threshold to ${value}σ`, 'success');
+        } catch (error) {
+            window.UIModule.showToast(`Could not save setting: ${error.message}`, 'error');
+        }
+        // Re-render either way so the dropdown shows the value actually saved.
         this.handleRoute();
     },
 
-    loadDemoData: function() {
+    loadDemoData: async function() {
         if(confirm('Load sample transactions into your account for testing statistical anomaly detection?')) {
-            const currentUser = window.StorageModule.getCurrentUser ? window.StorageModule.getCurrentUser() : null;
-            if (currentUser) {
-                if (window.StorageModule.seedDemoDataForUser) {
-                    window.StorageModule.seedDemoDataForUser(currentUser.email);
-                }
+            try {
+                await window.StorageModule.loadDemoData();
+                window.UIModule.showToast('Sample dataset loaded successfully!', 'success');
+                this.handleRoute();
+            } catch (error) {
+                window.UIModule.showToast(`Could not load sample data: ${error.message}`, 'error');
             }
-            window.UIModule.showToast('Sample dataset loaded successfully!', 'success');
-            this.handleRoute();
         }
     },
 
-    clearAllData: function() {
+    clearAllData: async function() {
         if(confirm('Are you sure you want to clear all transactions for your account? This cannot be undone.')) {
-            const currentUser = window.StorageModule.getCurrentUser ? window.StorageModule.getCurrentUser() : null;
-            if (currentUser) {
-                window.StorageModule.clearUserTransactions(currentUser.email);
+            try {
+                await window.StorageModule.clearUserTransactions();
+                window.UIModule.showToast('All your transactions have been cleared.', 'info');
+                this.handleRoute();
+            } catch (error) {
+                window.UIModule.showToast(`Could not clear transactions: ${error.message}`, 'error');
             }
-            window.UIModule.showToast('All your transactions have been cleared.', 'info');
-            this.handleRoute();
         }
     },
 
@@ -1445,7 +1450,7 @@ const AppRouter = {
         window.UIModule.openModal('Add Transaction', html);
     },
 
-    submitAddTransaction: function(e) {
+    submitAddTransaction: async function(e) {
         e.preventDefault();
         
         const dateStr = document.getElementById('txDate').value;
@@ -1464,7 +1469,18 @@ const AppRouter = {
             notes: (document.getElementById('txNotes') ? document.getElementById('txNotes').value.trim() : '')
         };
 
-        window.StorageModule.addTransactionForUser(tx);
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        if (submitBtn) submitBtn.disabled = true;
+
+        try {
+            await window.StorageModule.addTransactionForUser(tx);
+        } catch (error) {
+            // Keep the modal open so nothing the user typed is lost.
+            window.UIModule.showToast(`Could not save transaction: ${error.message}`, 'error');
+            if (submitBtn) submitBtn.disabled = false;
+            return;
+        }
+
         window.UIModule.closeModal();
         window.UIModule.showToast('Transaction recorded. Baselines recalculated!', 'success');
         
@@ -1545,7 +1561,7 @@ const AppRouter = {
         window.UIModule.openModal('Edit Transaction', html);
     },
 
-    submitEditTransaction: function(e, txId) {
+    submitEditTransaction: async function(e, txId) {
         e.preventDefault();
         const dateStr = document.getElementById('editTxDate').value;
         const currentUser = window.StorageModule.getCurrentUser ? window.StorageModule.getCurrentUser() : null;
@@ -1564,8 +1580,15 @@ const AppRouter = {
             description: document.getElementById('editTxNotes').value.trim() || document.getElementById('editTxMerchant').value.trim()
         };
 
-        if (window.StorageModule.updateTransaction) {
-            window.StorageModule.updateTransaction(updatedTx);
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        if (submitBtn) submitBtn.disabled = true;
+
+        try {
+            await window.StorageModule.updateTransaction(updatedTx);
+        } catch (error) {
+            window.UIModule.showToast(`Could not update transaction: ${error.message}`, 'error');
+            if (submitBtn) submitBtn.disabled = false;
+            return;
         }
 
         window.UIModule.closeModal();
@@ -1573,9 +1596,14 @@ const AppRouter = {
         setTimeout(() => this.handleRoute(), 100);
     },
 
-    deleteTransaction: function(txId, fromModal = false) {
+    deleteTransaction: async function(txId, fromModal = false) {
         if (confirm('Are you sure you want to delete this transaction? This will automatically update your statistical baselines.')) {
-            window.StorageModule.deleteTransaction(txId);
+            try {
+                await window.StorageModule.deleteTransaction(txId);
+            } catch (error) {
+                window.UIModule.showToast(`Could not delete transaction: ${error.message}`, 'error');
+                return;
+            }
             if (fromModal) {
                 window.UIModule.closeModal();
             }
@@ -1686,7 +1714,7 @@ const AppRouter = {
         reader.readAsText(file);
     },
 
-    submitCsvImport: function(e) {
+    submitCsvImport: async function(e) {
         if (e) e.preventDefault();
 
         const textarea = document.getElementById('csvData');
@@ -1711,21 +1739,25 @@ const AppRouter = {
         if (result && (result.valid || result.transactions)) {
             const txns = result.valid || result.transactions || [];
             if (txns.length > 0) {
-                // Ensure every transaction has the current user ID
-                txns.forEach(tx => {
-                    tx.userId = userEmail;
-                });
-
-                const currentTxs = window.StorageModule.getTransactionsForUser(userEmail) || [];
-                const all = window.StorageModule.getAllTransactions();
-                const otherUserTxs = all.filter(tx => tx.userId !== userEmail);
-
-                window.StorageModule.saveAllTransactions([...txns, ...currentTxs, ...otherUserTxs]);
+                // The server validates every row again, assigns them to the
+                // logged-in account and skips rows that were imported before.
+                let summary;
+                try {
+                    summary = await window.StorageModule.importTransactions(txns);
+                } catch (error) {
+                    window.UIModule.showToast(`Import failed: ${error.message}`, 'error');
+                    return;
+                }
                 window.UIModule.closeModal();
-                
-                let toastMsg = `Imported ${txns.length} transaction${txns.length > 1 ? 's' : ''} successfully!`;
-                if (result.invalidCount > 0) {
-                    toastMsg += ` (${result.invalidCount} invalid rows skipped)`;
+
+                const imported = summary.importedCount;
+                const invalidCount = (result.invalidCount || 0) + summary.invalidCount;
+                let toastMsg = `Imported ${imported} transaction${imported !== 1 ? 's' : ''} successfully!`;
+                if (invalidCount > 0) {
+                    toastMsg += ` (${invalidCount} invalid rows skipped)`;
+                }
+                if (summary.duplicateCount > 0) {
+                    toastMsg += ` (${summary.duplicateCount} already imported)`;
                 }
                 window.UIModule.showToast(toastMsg, 'success');
                 

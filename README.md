@@ -1,6 +1,8 @@
 # AURELIS — Recurring Expense Anomaly Detector
 
-> **Phase 1** · Vanilla JavaScript · LocalStorage · Statistical Z-Score Detection
+> **Phase 2** · Vanilla JavaScript frontend · Node.js + Express REST API · MongoDB Atlas · Statistical Z-Score Detection
+>
+> Backend setup, API reference, Postman and deployment: see [`backend/README.md`](backend/README.md).
 
 ---
 
@@ -21,7 +23,8 @@ AURELIS builds a **personal spending baseline** per category (mean + standard de
 ## 3. Features (Phase 1)
 
 - ✅ Public landing page with problem statement and algorithm explanation
-- ✅ LocalStorage-based demo authentication (register, login, logout)
+- ✅ Secure accounts: passwords hashed with bcrypt, JWT login (Phase 2)
+- ✅ Transactions and settings stored in MongoDB, available on any device (Phase 2)
 - ✅ Add transactions with full form validation
 - ✅ Import transactions from CSV files (FileReader API)
 - ✅ Dashboard with KPI cards, category summary, recent transactions
@@ -30,7 +33,8 @@ AURELIS builds a **personal spending baseline** per category (mean + standard de
 - ✅ Filter by: All / Anomalies / Normal / Category
 - ✅ Configurable z-score threshold (2.0σ – 4.0σ)
 - ✅ Edge case handling: σ=0, insufficient data (<3 transactions)
-- ✅ Transactions associated with user ID (Phase 2 readiness)
+- ✅ Each transaction belongs to one MongoDB user; users cannot see each other's data
+- ✅ Re-importing the same CSV does not create duplicates
 - ✅ Responsive design (mobile + desktop)
 
 ---
@@ -42,12 +46,15 @@ AURELIS builds a **personal spending baseline** per category (mean + standard de
 | Structure | HTML5 |
 | Styling | CSS3 (Vanilla, no frameworks) |
 | Logic | Vanilla JavaScript (ES6+) |
-| Persistence | Browser LocalStorage |
-| Data Exchange | JSON |
+| Backend (Phase 2) | Node.js, Express 5 (MVC) |
+| Database (Phase 2) | MongoDB Atlas via Mongoose |
+| Auth (Phase 2) | bcryptjs + JSON Web Tokens |
+| Data Exchange | JSON REST API |
 | Import | CSV via FileReader API |
+| API Testing | Postman, node:test + Supertest |
 | Version Control | Git / GitHub |
 
-**No:** React, Node.js, Express, MongoDB, JWT, Bootstrap, Tailwind, or ML libraries.
+**No** frontend framework (React, Bootstrap, Tailwind) and no ML libraries. The z-score detection still runs in the browser.
 
 ---
 
@@ -72,10 +79,17 @@ AURELIS builds a **personal spending baseline** per category (mean + standard de
           \                            /
            \                          /
             v                        v
-                  LocalStorage
-                  (transactions)
-                        |
+              js/storage.js  →  js/api.js
+                        |   fetch + JWT
                         v
+          Express REST API (backend/)
+          routes → middleware → controllers
+                        |   Mongoose
+                        v
+                  MongoDB Atlas
+          (users, transactions, settings)
+                        |
+                        v   transactions loaded into the browser
              anomalyDetector.js
              ┌─────────┴─────────┐
              v                   v
@@ -136,23 +150,29 @@ if |z| ≥ threshold → isAnomaly = true
 ## 7. Data Structure
 
 ```js
-// Transaction object (LocalStorage)
+// Transaction as returned by GET /api/transactions (stored in MongoDB)
 {
-  id:          "TXN-1723906800000-A3B2",
-  userId:      "user@example.com",   // Phase 2 readiness
-  amount:      1500,
-  category:    "Food",
-  description: "Taj Hotel Dining",
-  date:        "2026-08-17",
-  timestamp:   1723906800000
+  id:            "66c1f0...",          // MongoDB ObjectId
+  userId:        "66c1ef...",          // owner (ObjectId of the user)
+  amount:        1500,
+  category:      "Food",
+  merchant:      "Taj Hotel Dining",
+  description:   "Taj Hotel Dining",
+  date:          "2026-08-17",
+  timestamp:     1786924800000,
+  paymentMethod: "Credit Card",
+  recurring:     false,
+  notes:         "",
+  source:        "manual"              // manual | csv | demo | legacy
 }
 
-// LocalStorage keys
-aurelis_users        → Array of { name, email, password }  // Phase 1 only
-aurelis_current_user → { name, email }
-aurelis_transactions → Array of transaction objects
-aurelis_settings     → { zScoreThreshold, ... }
+// What the browser still keeps in localStorage
+aurelis_token        → JWT for the API (no password is ever stored)
+currentUser          → { id, name, email } for greeting the user
+aurelis_transactions → Phase 1 data, kept only as a backup for migration
 ```
+
+Full MongoDB schemas: see [`backend/README.md`](backend/README.md#mongodb-collections).
 
 ---
 
@@ -165,9 +185,11 @@ date,category,amount,description
 2026-08-12,Shopping,4500,New clothes
 ```
 
-- **Required columns:** `date`, `category`, `amount`
-- `description` is optional
+- **Required columns:** `date`, `amount` (`category` defaults to `Other`)
+- `description` / `merchant`, `payment_method` and `transaction_id` are optional
 - Invalid rows are skipped with a count shown in the import summary
+- Rows are validated again by the server before they are saved
+- Importing the same file twice skips rows that are already saved (matched by `transaction_id`, or by date + amount + category + merchant when there is no ID column)
 
 ---
 
@@ -177,7 +199,7 @@ date,category,amount,description
 aurelis/
 │
 ├── index.html          ← Public landing page
-├── login.html          ← Login / Register (Phase 1 LocalStorage auth)
+├── login.html          ← Login / Register (backend JWT auth)
 ├── dashboard.html      ← Main dashboard workspace
 ├── anomalies.html      ← Anomaly analysis table
 ├── app.html            ← Advanced SPA (original Aurelis shell)
@@ -192,7 +214,8 @@ aurelis/
 │   └── anomalies.css   ← Anomaly page styles
 │
 ├── js/
-│   ├── storage.js          ← LocalStorage abstraction (M1)
+│   ├── api.js              ← API base URL + fetch helper (Phase 2)
+│   ├── storage.js          ← Data layer: API calls + in-memory cache (M1, Phase 2)
 │   ├── transactions.js     ← Transaction helpers (M1)
 │   ├── anomalyDetector.js  ← Z-score engine (M1)
 │   ├── auth.js             ← Authentication (M3)
@@ -201,7 +224,20 @@ aurelis/
 │   ├── csv.js              ← CSV import (M3)
 │   └── utils.js            ← Shared utilities (M3, all review)
 │
-└── assets/images/      ← Static images
+└── backend/            ← Phase 2 REST API (Node.js + Express + MongoDB)
+    ├── src/
+    │   ├── config/db.js        ← MongoDB connection
+    │   ├── models/             ← User, Transaction, Settings (Mongoose)
+    │   ├── controllers/        ← auth, transaction, settings logic
+    │   ├── routes/             ← URL → controller mapping
+    │   ├── middleware/         ← JWT auth, DB check, error handler
+    │   ├── utils/              ← input validation, demo dataset
+    │   ├── app.js              ← Express app setup
+    │   └── server.js           ← connects to MongoDB, then starts listening
+    ├── tests/                  ← automated API tests
+    ├── postman/                ← Postman collection + environments
+    ├── .env.example
+    └── README.md
 ```
 
 ---
@@ -214,22 +250,24 @@ Phase 1 is a **frontend-only demonstration** using:
 - LocalStorage for persistence
 - FileReader API for CSV import
 
-**Authentication disclaimer:** Credentials are stored in plain text in LocalStorage for demonstration purposes. This is NOT secure. Phase 2 replaces this with proper JWT authentication.
+**Authentication disclaimer (Phase 1 only):** Credentials were stored in plain text in LocalStorage. Phase 2 replaced this with bcrypt-hashed passwords and JWT authentication.
 
 ---
 
-## 11. Phase 2 — Future Scope
+## 11. Phase 2 — Backend Migration (Implemented)
 
-> Phase 2 is planned but NOT yet implemented.
+| Feature | Technology | Status |
+|---|---|---|
+| Secure authentication | Express.js + JWT + bcrypt | ✅ Done |
+| Database | MongoDB Atlas (`users`, `transactions`, `settings`) | ✅ Done |
+| REST API | `/api/auth`, `/api/transactions`, `/api/settings`, `/api/health` | ✅ Done |
+| Frontend | Existing HTML/CSS/JS kept as-is (no React) | ✅ Kept unchanged |
+| Detection | Still the browser z-score engine on data from the API | ✅ Unchanged |
+| Server-side detection, frequency-based detection | — | Future scope |
 
-| Feature | Technology |
-|---|---|
-| Secure authentication | Express.js + JWT + bcrypt |
-| Database | MongoDB (`users`, `transactions`, `categoryBaselines`) |
-| REST API | `/api/transactions/anomalies` |
-| Frontend | React with controlled components |
-| Server-side detection | Node.js anomaly engine |
-| Frequency-based detection | Recurring pattern analysis |
+The frontend design was not changed. Only the data layer (`js/storage.js`, new `js/api.js`) and the code that saves data (`js/auth.js`, `js/app.js`, the write actions in `js/router.js`, `js/csv.js`) were updated to call the API.
+
+**Existing browser data:** data saved by Phase 1 is not moved to MongoDB automatically. After you register with the same email you used before, the dashboard offers once to import the old transactions. The old browser copy is never deleted. Phase 1 passwords are not migrated, so every user must register again.
 
 ---
 
@@ -245,25 +283,26 @@ Phase 1 is a **frontend-only demonstration** using:
 
 ## 13. How to Run
 
-1. Clone the repository:
+1. Clone the repository and install the backend:
    ```bash
-   git clone https://github.com/<your-org>/aurelis.git
-   cd aurelis
+   git clone https://github.com/38sukritti/Aurelis.git
+   cd Aurelis/backend
+   npm install
+   cp .env.example .env      # then fill in MONGODB_URI and JWT_SECRET
+   npm run dev
    ```
 
-2. Open `index.html` in any modern browser (Chrome, Firefox, Edge, Safari) or run a local server:
-   ```bash
-   python3 -m http.server 3000
-   ```
-   - **No build step required.**
-   - **No npm install required.**
+2. Open **http://localhost:5050**. The backend serves the existing frontend as well as the API, so no second server is needed.
+   - You can still use VS Code Live Server or `python3 -m http.server`. `js/api.js` then calls the backend on `http://localhost:5050/api`.
 
 3. Application flow:
    ```
-   index.html → login.html → dashboard.html → anomalies.html
+   index.html → login.html → dashboard.html (#/dashboard, #/transactions, #/anomalies, ...)
    ```
 
-4. For the advanced SPA view: open `app.html` or visit `http://localhost:3000/app.html`.
+4. Run the API tests: `cd backend && npm test`.
+
+Full details (environment variables, API reference, Postman, Render deployment): [`backend/README.md`](backend/README.md).
 
 ---
 
@@ -327,4 +366,4 @@ git push origin main
 
 ---
 
-*AURELIS Phase 1 — Built for educational demonstration of JavaScript concepts and statistical anomaly detection.*
+*AURELIS — Phase 1 (frontend + statistical detection) and Phase 2 (Node.js/Express/MongoDB backend). Built for educational demonstration.*

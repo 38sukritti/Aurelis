@@ -58,10 +58,14 @@ const initDashboard = () => {
     // Bind Seed Demo Data button
     const seedBtn = document.getElementById('btn-seed-data');
     if (seedBtn) {
-        seedBtn.addEventListener('click', () => {
-            window.StorageModule.seedDemoDataForUser(currentUser.email);
-            window.Utils.showToast('Sample dataset loaded for your account!', 'success');
-            renderDashboard();
+        seedBtn.addEventListener('click', async () => {
+            try {
+                await window.StorageModule.loadDemoData();
+                window.Utils.showToast('Sample dataset loaded for your account!', 'success');
+                renderDashboard();
+            } catch (error) {
+                window.Utils.showToast(error.message, 'danger');
+            }
         });
     }
 

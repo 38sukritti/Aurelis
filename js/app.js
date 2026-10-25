@@ -9,7 +9,7 @@
 const App = {
     currentUser: null,
 
-    init: function() {
+    init: async function() {
         // Check auth first
         const user = window.StorageModule.getCurrentUser();
         if (!user) {
@@ -19,8 +19,14 @@ const App = {
         this.currentUser = user;
 
         this.updateCurrentDate();
-        this.initializeData();
-        
+        this.bindEvents();
+
+        // Wait for the user's data before the splash screen is removed and
+        // the router renders, so the views never show half-loaded numbers.
+        const startedAt = Date.now();
+        const dataLoaded = await this.initializeData();
+        const remainingSplashTime = Math.max(0, 700 - (Date.now() - startedAt));
+
         // Hide splash screen after initialization
         setTimeout(() => {
             const splash = document.getElementById('splash-screen');
@@ -33,31 +39,48 @@ const App = {
                 if (splash && splash.parentNode) splash.remove();
                 // Initialize Router after DOM is visible
                 if (window.AppRouter) window.AppRouter.init();
+                if (dataLoaded) this.offerLegacyImport();
             }, 400);
-        }, 700);
-
-        this.bindEvents();
+        }, remainingSplashTime);
     },
 
-    initializeData: function() {
-        // Ensure default settings exist
-        const settings = window.StorageModule.getSettings();
-        if (!settings || !settings.zScoreThreshold) {
-            window.StorageModule.saveSettings({
-                zScoreThreshold: 3.0,
-                behavioralIntelligence: true,
-                experimentalModel: true,
-                showConfidenceScores: true
-            });
+    initializeData: async function() {
+        try {
+            this.currentUser = await window.StorageModule.loadUserData();
+            return true;
+        } catch (error) {
+            // A 401 already redirected to the login page. Anything else
+            // (server down, no network) is shown instead of failing silently.
+            if (error.status !== 401) {
+                console.error('Could not load data from the API:', error);
+                window.UIModule.showToast(`${error.message} Your data could not be loaded.`, 'error');
+            }
+            return false;
+        }
+    },
+
+    // One-time offer to copy transactions saved by the old localStorage
+    // version of AURELIS into this account. The browser copy is kept.
+    offerLegacyImport: async function() {
+        const email = this.currentUser && this.currentUser.email;
+        if (!email || email === 'demo@aurelis.io') return;
+
+        const legacyRows = window.StorageModule.findLegacyTransactions(email);
+        if (legacyRows.length === 0) return;
+
+        const message = `We found ${legacyRows.length} transaction(s) saved in this browser by the previous version of AURELIS. Import them into your account?`;
+        if (!confirm(message)) {
+            // Don't ask again on every page load.
+            window.StorageModule.markLegacyImportDone(email);
+            return;
         }
 
-        // Only seed demo data for the dedicated demo account (demo@aurelis.io)
-        if (this.currentUser && this.currentUser.email === 'demo@aurelis.io') {
-            const userTxs = window.StorageModule.getTransactionsForUser(this.currentUser.email);
-            if (userTxs.length === 0 && window.StorageModule.seedDemoDataForUser) {
-                console.log('Seeding demo data for demo user...');
-                window.StorageModule.seedDemoDataForUser(this.currentUser.email);
-            }
+        try {
+            const summary = await window.StorageModule.importLegacyTransactions(email);
+            window.UIModule.showToast(`Imported ${summary.importedCount} saved transaction(s).`, 'success');
+            if (window.AppRouter) window.AppRouter.handleRoute();
+        } catch (error) {
+            window.UIModule.showToast(`Import failed: ${error.message}`, 'error');
         }
     },
 

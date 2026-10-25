@@ -369,7 +369,7 @@
         // ── Authentication Session Recognition ──────────────────────────────
         (function() {
             function getStoredUser() {
-                const raw = localStorage.getItem('currentUser') || localStorage.getItem('aurelis_current_user');
+                const raw = localStorage.getItem('aurelis_token') ? (localStorage.getItem('currentUser') || localStorage.getItem('aurelis_current_user')) : null;
                 if (!raw) return null;
                 try {
                     const parsed = JSON.parse(raw);

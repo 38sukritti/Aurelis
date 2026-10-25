@@ -25,7 +25,7 @@
     <!-- Auth Guard: Redirect to dashboard if already logged in -->
     <script>
         (function() {
-            const raw = localStorage.getItem('currentUser') || localStorage.getItem('aurelis_current_user');
+            const raw = localStorage.getItem('aurelis_token') ? (localStorage.getItem('currentUser') || localStorage.getItem('aurelis_current_user')) : null;
             if (raw) {
                 try {
                     const user = JSON.parse(raw);
@@ -180,7 +180,7 @@
 <div id="toast-container" class="toast-container"></div>
 
 <!-- Scripts -->
-<script src="js/storage.js"></script>
+<script src="js/api.js"></script><script src="js/storage.js"></script>
 <script src="js/utils.js"></script>
 <script src="js/auth.js"></script>
 

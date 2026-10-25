@@ -2,295 +2,277 @@
    COMMIT NO. 02
    COMMIT BY: Sukritti
    COMMIT MESSAGE: feat(storage): implement LocalStorage schema, user session and transaction persistence
+   -----------------------------------------------------------------------------
+   Phase 2: data now lives in MongoDB behind the AURELIS REST API.
+
+   The rest of the app reads data synchronously (router, charts, analytics),
+   so this module keeps an in-memory copy of the user's transactions and
+   settings. loadUserData() fills it from the API once when the app starts.
+   Every write goes to the API first and only updates the copy after the
+   server has confirmed the save, so the UI never shows unsaved data.
    ============================================================================= */
 
 'use strict';
 
 const STORAGE_KEYS = {
+    // Phase 1 keys, still read once for the one-time migration.
     TRANSACTIONS: 'aurelis_transactions',
     SETTINGS:     'aurelis_settings',
     USERS:        'aurelis_users',
-    CURRENT_USER: 'currentUser'
+    // Only the public profile (id, name, email) is kept in the browser, so the
+    // pages can greet the user before the API responds. Never a password.
+    CURRENT_USER: 'currentUser',
+    LEGACY_IMPORT_DONE: 'aurelis_legacy_import_done'
 };
 
 const DEFAULT_SETTINGS = {
     zScoreThreshold: 3.0
 };
 
-// Seed demo user credentials
-const DEMO_USER = {
-    id: 'demo@aurelis.io',
-    name: 'Alex Vance',
-    email: 'demo@aurelis.io',
-    password: 'password123'
+let cachedTransactions = [];
+let cachedSettings = { ...DEFAULT_SETTINGS };
+
+// Newest first, the same order the API returns.
+const sortNewestFirst = (transactions) => {
+    return transactions.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 };
 
 const StorageModule = {
 
-    // ── User Management ───────────────────────────────────────────────────────
-    
-    getUsers: function() {
-        const data = localStorage.getItem(STORAGE_KEYS.USERS);
-        let users = data ? JSON.parse(data) : [];
-        // Ensure demo user exists
-        if (!users.find(u => u.email === DEMO_USER.email)) {
-            users.push(DEMO_USER);
-            this.saveUsers(users);
-        }
-        return users;
-    },
-
-    saveUsers: function(users) {
-        localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
-    },
-
-    saveUser: function(user) {
-        const users = this.getUsers();
-        const existingIdx = users.findIndex(u => u.email === user.email);
-        if (existingIdx >= 0) {
-            users[existingIdx] = user;
-        } else {
-            users.push(user);
-        }
-        this.saveUsers(users);
-    },
-
-    findUserByEmail: function(email) {
-        const users = this.getUsers();
-        return users.find(u => u.email.toLowerCase() === email.toLowerCase());
-    },
-
     // ── Session Management ───────────────────────────────────────────────────
 
     getCurrentUser: function() {
+        if (!window.ApiClient.getToken()) return null;
+
         const data = localStorage.getItem('currentUser') || localStorage.getItem('aurelis_current_user');
         if (!data) return null;
         try {
             const parsed = JSON.parse(data);
-            if (parsed && typeof parsed === 'object' && parsed.email) {
-                // Ensure id field is populated
-                if (!parsed.id) parsed.id = parsed.email;
-                // Keep keys synced
-                localStorage.setItem('currentUser', JSON.stringify(parsed));
-                localStorage.setItem('aurelis_current_user', JSON.stringify(parsed));
-                return parsed;
-            }
-            return null;
+            return (parsed && typeof parsed === 'object' && parsed.email) ? parsed : null;
         } catch (e) {
-            localStorage.removeItem('currentUser');
-            localStorage.removeItem('aurelis_current_user');
+            this.clearSession();
             return null;
         }
     },
 
     setCurrentUser: function(user) {
         if (!user) {
-            localStorage.removeItem('currentUser');
-            localStorage.removeItem('aurelis_current_user');
-        } else {
-            const payload = {
-                id: user.id || user.email,
-                name: user.name,
-                email: user.email
-            };
-            localStorage.setItem('currentUser', JSON.stringify(payload));
-            localStorage.setItem('aurelis_current_user', JSON.stringify(payload));
+            this.clearSession();
+            return;
         }
+        const payload = { id: user.id, name: user.name, email: user.email };
+        // Both keys are written because the inline scripts in the HTML pages read either one.
+        localStorage.setItem('currentUser', JSON.stringify(payload));
+        localStorage.setItem('aurelis_current_user', JSON.stringify(payload));
     },
 
     clearSession: function() {
+        window.ApiClient.setToken(null);
         localStorage.removeItem('currentUser');
         localStorage.removeItem('aurelis_current_user');
+        cachedTransactions = [];
+        cachedSettings = { ...DEFAULT_SETTINGS };
+    },
+
+    startSession: function(sessionData) {
+        window.ApiClient.setToken(sessionData.token);
+        this.setCurrentUser(sessionData.user);
+        return sessionData.user;
+    },
+
+    // ── Authentication (backend) ─────────────────────────────────────────────
+
+    login: async function(email, password) {
+        const response = await window.ApiClient.request('/auth/login', {
+            method: 'POST',
+            body: { email, password }
+        });
+        return this.startSession(response.data);
+    },
+
+    register: async function(name, email, password) {
+        const response = await window.ApiClient.request('/auth/register', {
+            method: 'POST',
+            body: { name, email, password }
+        });
+        return this.startSession(response.data);
+    },
+
+    demoLogin: async function() {
+        const response = await window.ApiClient.request('/auth/demo', { method: 'POST' });
+        return this.startSession(response.data);
+    },
+
+    // Requests that need a logged-in user. An expired or invalid token sends
+    // the user back to the login page instead of showing an empty dashboard.
+    authorizedRequest: async function(path, options) {
+        try {
+            return await window.ApiClient.request(path, options);
+        } catch (error) {
+            if (error.status === 401) {
+                this.clearSession();
+                window.location.replace('login.html');
+            }
+            throw error;
+        }
+    },
+
+    // Loads the user's profile, transactions and settings from the API.
+    // Must finish before the router renders anything.
+    loadUserData: async function() {
+        const [meResponse, transactionsResponse, settingsResponse] = await Promise.all([
+            this.authorizedRequest('/auth/me'),
+            this.authorizedRequest('/transactions'),
+            this.authorizedRequest('/settings')
+        ]);
+
+        this.setCurrentUser(meResponse.data.user);
+        cachedTransactions = transactionsResponse.data;
+        cachedSettings = { ...DEFAULT_SETTINGS, ...settingsResponse.data };
+        return meResponse.data.user;
     },
 
     // ── Transaction Management ────────────────────────────────────────────────
+    // Reads come from the in-memory copy. The userId arguments are kept so
+    // existing callers don't change; the server already scopes everything
+    // to the logged-in user.
 
     getAllTransactions: function() {
-        const data = localStorage.getItem(STORAGE_KEYS.TRANSACTIONS);
-        return data ? JSON.parse(data) : [];
-    },
-
-    saveAllTransactions: function(transactions) {
-        localStorage.setItem(STORAGE_KEYS.TRANSACTIONS, JSON.stringify(transactions));
+        return cachedTransactions.slice();
     },
 
     getTransactionsForUser: function(userId) {
-        const all = this.getAllTransactions();
-        if (!userId) return all;
-        return all.filter(tx => tx.userId === userId);
+        return this.getAllTransactions();
     },
 
     getTransactionById: function(txId) {
-        const all = this.getAllTransactions();
-        return all.find(tx => tx.id === txId) || null;
+        return cachedTransactions.find(tx => tx.id === txId) || null;
     },
 
-    addTransactionForUser: function(transaction) {
-        const all = this.getAllTransactions();
-        const currentUser = this.getCurrentUser();
-        if (!transaction.userId && currentUser) {
-            transaction.userId = currentUser.email;
-        }
-        all.unshift(transaction);
-        this.saveAllTransactions(all);
+    addTransactionForUser: async function(transaction) {
+        const response = await this.authorizedRequest('/transactions', {
+            method: 'POST',
+            body: transaction
+        });
+        cachedTransactions = sortNewestFirst([response.data, ...cachedTransactions]);
+        return response.data;
     },
 
-    updateTransaction: function(updatedTx) {
-        const all = this.getAllTransactions();
-        const index = all.findIndex(tx => tx.id === updatedTx.id);
-        if (index !== -1) {
-            all[index] = { ...all[index], ...updatedTx };
-            this.saveAllTransactions(all);
-            return true;
-        }
-        return false;
+    updateTransaction: async function(updatedTx) {
+        const { id, userId, timestamp, ...fields } = updatedTx;
+        const response = await this.authorizedRequest(`/transactions/${encodeURIComponent(id)}`, {
+            method: 'PUT',
+            body: fields
+        });
+        cachedTransactions = sortNewestFirst(cachedTransactions.map(tx => tx.id === id ? response.data : tx));
+        return response.data;
     },
 
-    deleteTransaction: function(txId) {
-        const all = this.getAllTransactions();
-        const filtered = all.filter(tx => tx.id !== txId);
-        this.saveAllTransactions(filtered);
+    deleteTransaction: async function(txId) {
+        await this.authorizedRequest(`/transactions/${encodeURIComponent(txId)}`, { method: 'DELETE' });
+        cachedTransactions = cachedTransactions.filter(tx => tx.id !== txId);
     },
 
-    clearUserTransactions: function(userId) {
-        const all = this.getAllTransactions();
-        const filtered = all.filter(tx => tx.userId !== userId);
-        this.saveAllTransactions(filtered);
+    clearUserTransactions: async function(userId) {
+        await this.authorizedRequest('/transactions', { method: 'DELETE' });
+        cachedTransactions = [];
+    },
+
+    // Sends parsed CSV rows to the server, which validates every row and
+    // skips rows that were already imported. Resolves with the import summary.
+    importTransactions: async function(transactions, source = 'csv') {
+        const response = await this.authorizedRequest('/transactions/import', {
+            method: 'POST',
+            body: { transactions, source }
+        });
+        const summary = response.data;
+        cachedTransactions = sortNewestFirst([...summary.transactions, ...cachedTransactions]);
+        return summary;
+    },
+
+    // Replaces the user's previous demo rows with a fresh sample dataset.
+    loadDemoData: async function() {
+        await this.authorizedRequest('/transactions/demo', { method: 'POST' });
+        const response = await this.authorizedRequest('/transactions');
+        cachedTransactions = response.data;
+        return cachedTransactions;
     },
 
     // ── Settings Management ──────────────────────────────────────────────────
 
     getSettings: function() {
-        const data = localStorage.getItem(STORAGE_KEYS.SETTINGS);
-        return data ? { ...DEFAULT_SETTINGS, ...JSON.parse(data) } : { ...DEFAULT_SETTINGS };
+        return { ...cachedSettings };
     },
 
-    saveSettings: function(settings) {
-        localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
+    saveSettings: async function(settings) {
+        const response = await this.authorizedRequest('/settings', {
+            method: 'PUT',
+            body: { zScoreThreshold: settings.zScoreThreshold }
+        });
+        cachedSettings = { ...DEFAULT_SETTINGS, ...response.data };
+        return this.getSettings();
     },
 
-    updateSetting: function(key, value) {
-        const settings = this.getSettings();
-        settings[key] = value;
-        this.saveSettings(settings);
+    updateSetting: async function(key, value) {
+        return this.saveSettings({ ...cachedSettings, [key]: value });
     },
 
-    // ── Demo Seed Data & Initial JSON Loading ─────────────────────────────────
+    // ── One-time migration of Phase 1 browser data ───────────────────────────
+    // Phase 1 stored transactions in this browser, tagged with the user's
+    // email. The old data is never deleted, so it stays as a backup.
 
-    loadInitialDataset: async function(userId = DEMO_USER.email) {
+    // Old rows for this email that haven't been offered for import yet.
+    findLegacyTransactions: function(email) {
+        const doneFor = (localStorage.getItem(STORAGE_KEYS.LEGACY_IMPORT_DONE) || '').split(',');
+        if (!email || doneFor.includes(email)) return [];
+        return this.readLegacyTransactions(email);
+    },
+
+    readLegacyTransactions: function(email) {
         try {
-            const response = await fetch('data/transactions.json');
-            if (response.ok) {
-                const initialTxns = await response.json();
-                const userTxns = initialTxns.map(tx => ({
-                    ...tx,
-                    userId: userId,
-                    timestamp: tx.timestamp || (tx.date ? new Date(tx.date).getTime() : Date.now())
-                }));
-                const all = this.getAllTransactions();
-                const remaining = all.filter(tx => tx.userId !== userId);
-                this.saveAllTransactions([...userTxns, ...remaining]);
-                return userTxns;
-            }
+            const all = JSON.parse(localStorage.getItem(STORAGE_KEYS.TRANSACTIONS) || '[]');
+            return Array.isArray(all) ? all.filter(tx => tx && tx.userId === email) : [];
         } catch (e) {
-            console.warn('Initial JSON load fallback to procedural seed', e);
+            console.warn('Old browser transactions could not be read:', e);
+            return [];
         }
-        return this.seedDemoDataForUser(userId);
     },
 
-    seedDemoDataForUser: function(userId) {
-        const categories = [
-            { cat: 'Food', mean: 235, std: 25, count: 12 },
-            { cat: 'Transport', mean: 140, std: 15, count: 8 },
-            { cat: 'Shopping', mean: 850, std: 60, count: 7 },
-            { cat: 'Bills', mean: 1240, std: 85, count: 5 },
-            { cat: 'Entertainment', mean: 375, std: 20, count: 5 },
-            { cat: 'Subscriptions', mean: 499, std: 5, count: 4 },
-            { cat: 'Travel', mean: 485, std: 30, count: 6 },
-            { cat: 'Healthcare', mean: 320, std: 25, count: 4 }
-        ];
+    // Can also be run by hand from the browser console:
+    //   StorageModule.importLegacyTransactions('you@example.com')
+    importLegacyTransactions: async function(email) {
+        const rows = this.readLegacyTransactions(email).map(tx => ({
+            // The old ID makes a retried migration skip rows that already made it.
+            importRef: tx.id ? `legacy:${tx.id}` : undefined,
+            amount: tx.amount,
+            category: tx.category,
+            merchant: tx.merchant,
+            description: tx.description,
+            date: tx.date || (tx.timestamp ? new Date(tx.timestamp).toISOString().split('T')[0] : undefined),
+            paymentMethod: tx.paymentMethod,
+            recurring: typeof tx.recurring === 'boolean' ? tx.recurring : undefined,
+            notes: tx.notes
+        }));
 
-        const seeded = [];
-        const now = Date.now();
-        let idCounter = 1;
+        const summary = await this.importTransactions(rows, 'legacy');
+        this.markLegacyImportDone(email);
+        return summary;
+    },
 
-        categories.forEach(profile => {
-            for (let i = 0; i < profile.count; i++) {
-                const daysAgo = Math.floor(Math.random() * 30) + 1;
-                const d = new Date(now - daysAgo * 24 * 60 * 60 * 1000);
-                
-                // Normal variation
-                const u1 = Math.random() || 0.5, u2 = Math.random() || 0.5;
-                const z0 = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
-                let amount = Math.max(50, Math.round(profile.mean + z0 * profile.std));
-
-                seeded.push({
-                    id: `TXN-${Date.now()}-${idCounter++}`,
-                    userId: userId,
-                    amount: amount,
-                    category: profile.cat,
-                    description: `${profile.cat} Routine Transaction`,
-                    date: d.toISOString().split('T')[0],
-                    timestamp: d.getTime()
-                });
-            }
-        });
-
-        // Add 3 intentional statistical anomalies
-        const d1 = new Date(now - 2 * 24 * 60 * 60 * 1000);
-        seeded.push({
-            id: `TXN-${Date.now()}-ANOM-1`,
-            userId: userId,
-            amount: 1850, // Mean is 235, Std is 25 -> Z > 60!
-            category: 'Food',
-            description: 'Luxury Restaurant Dinner (Outlier)',
-            date: d1.toISOString().split('T')[0],
-            timestamp: d1.getTime()
-        });
-
-        const d2 = new Date(now - 5 * 24 * 60 * 60 * 1000);
-        seeded.push({
-            id: `TXN-${Date.now()}-ANOM-2`,
-            userId: userId,
-            amount: 4500, // Mean is 850, Std is 60 -> Z > 60!
-            category: 'Shopping',
-            description: 'Designer Electronics Purchase (Outlier)',
-            date: d2.toISOString().split('T')[0],
-            timestamp: d2.getTime()
-        });
-
-        const d3 = new Date(now - 8 * 24 * 60 * 60 * 1000);
-        seeded.push({
-            id: `TXN-${Date.now()}-ANOM-3`,
-            userId: userId,
-            amount: 2100, // Mean is 485, Std is 30 -> Z > 50!
-            category: 'Travel',
-            description: 'Flight Booking (Outlier)',
-            date: d3.toISOString().split('T')[0],
-            timestamp: d3.getTime()
-        });
-
-        // Save to LocalStorage
-        const all = this.getAllTransactions();
-        const remaining = all.filter(tx => tx.userId !== userId);
-        this.saveAllTransactions([...seeded, ...remaining]);
-        return seeded;
+    markLegacyImportDone: function(email) {
+        const doneFor = (localStorage.getItem(STORAGE_KEYS.LEGACY_IMPORT_DONE) || '').split(',').filter(Boolean);
+        if (!doneFor.includes(email)) doneFor.push(email);
+        localStorage.setItem(STORAGE_KEYS.LEGACY_IMPORT_DONE, doneFor.join(','));
     },
 
     // ── Backwards-compatible aliases ─────────────────────────────────────────
 
     getTransactions: function() {
-        const user = this.getCurrentUser();
-        if (user) return this.getTransactionsForUser(user.email);
         return this.getAllTransactions();
     },
 
-    saveTransactions: function(transactions) {
-        this.saveAllTransactions(transactions);
-    },
-
     isFirstLaunch: function() {
-        return this.getAllTransactions().length === 0;
+        return cachedTransactions.length === 0;
     }
 };
 

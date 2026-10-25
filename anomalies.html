@@ -26,7 +26,7 @@
     <!-- Auth Guard & Route to Left Sidebar App Shell -->
     <script>
         (function() {
-            const raw = localStorage.getItem('currentUser') || localStorage.getItem('aurelis_current_user');
+            const raw = localStorage.getItem('aurelis_token') ? (localStorage.getItem('currentUser') || localStorage.getItem('aurelis_current_user')) : null;
             if (!raw) {
                 window.location.replace('login.html');
                 return;
@@ -203,7 +203,7 @@
 
 <!-- Scripts -->
 <script src="js/statistics.js"></script>
-<script src="js/storage.js"></script>
+<script src="js/api.js"></script><script src="js/storage.js"></script>
 <script src="js/utils.js"></script>
 <script src="js/transactions.js"></script>
 <script src="js/anomalyDetector.js"></script>
