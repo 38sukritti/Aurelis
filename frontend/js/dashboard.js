@@ -1,7 +1,6 @@
-/* =============================================================================
-   COMMIT NO. 26
-   COMMIT BY: Simran
-   COMMIT MESSAGE: feat(dashboard): dashboard event listeners, modal controllers and CSV wiring
+﻿/* =============================================================================
+   AURELIS -- Financial Intelligence & Statistical Anomaly Detector
+   Collaborative Development: Sukritti Singla -- Harshita Malhotra -- Simran Kapoor
    ============================================================================= */
 
 'use strict';
@@ -58,10 +57,14 @@ const initDashboard = () => {
     // Bind Seed Demo Data button
     const seedBtn = document.getElementById('btn-seed-data');
     if (seedBtn) {
-        seedBtn.addEventListener('click', () => {
-            window.StorageModule.seedDemoDataForUser(currentUser.email);
-            window.Utils.showToast('Sample dataset loaded for your account!', 'success');
-            renderDashboard();
+        seedBtn.addEventListener('click', async () => {
+            try {
+                await window.StorageModule.loadDemoData();
+                window.Utils.showToast('Sample dataset loaded for your account!', 'success');
+                renderDashboard();
+            } catch (error) {
+                window.Utils.showToast(error.message, 'danger');
+            }
         });
     }
 
@@ -152,14 +155,14 @@ const renderRecentTransactions = (decoratedTransactions) => {
         if (tx.insufficientData) {
             badgeHtml = '<span class="badge badge-insufficient">Learning</span>';
         } else if (tx.isAnomaly) {
-            badgeHtml = `<span class="badge badge-${tx.severity}">${tx.severity} (${Math.abs(tx.zScore)}σ)</span>`;
+            badgeHtml = `<span class="badge badge-${tx.severity}">${tx.severity} (${Math.abs(tx.zScore)}Ïƒ)</span>`;
         }
 
         return `
             <tr data-id="${tx.id}">
                 <td>${window.Utils.formatDate(tx.date)}</td>
                 <td><span style="font-weight: 500;">${tx.category}</span></td>
-                <td style="color: var(--text-secondary);">${tx.description || '—'}</td>
+                <td style="color: var(--text-secondary);">${tx.description || 'â€”'}</td>
                 <td class="cell-amount">${window.Utils.formatCurrency(tx.amount)}</td>
                 <td>${badgeHtml}</td>
                 <td style="text-align: right; white-space: nowrap;">

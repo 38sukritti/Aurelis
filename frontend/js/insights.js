@@ -1,7 +1,6 @@
-/* =============================================================================
-   COMMIT NO. 17
-   COMMIT BY: Simran
-   COMMIT MESSAGE: feat(insights): generate plain-English spending anomalies and actionable insights
+﻿/* =============================================================================
+   AURELIS -- Financial Intelligence & Statistical Anomaly Detector
+   Collaborative Development: Sukritti Singla -- Harshita Malhotra -- Simran Kapoor
    ============================================================================= */
 
 /**
@@ -71,7 +70,7 @@ const InsightsModule = {
             const monthlyRecurringEstimate = recurringTxs.reduce((sum, t) => sum + t.amount, 0) / (totalDurationDays / 30);
             if (monthlyRecurringEstimate > 5000) {
                 insights.push({
-                    text: `Your estimated monthly recurring expenses are approximately ₹${Math.round(monthlyRecurringEstimate).toLocaleString()}.`,
+                    text: `Your estimated monthly recurring expenses are approximately â‚¹${Math.round(monthlyRecurringEstimate).toLocaleString()}.`,
                     type: "neutral"
                 });
             }

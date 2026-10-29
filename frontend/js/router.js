@@ -1,7 +1,6 @@
-/* =============================================================================
-   COMMIT NO. 19
-   COMMIT BY: Simran
-   COMMIT MESSAGE: feat(router): build SPA hash router and view renderers for statistical dashboard
+﻿/* =============================================================================
+   AURELIS -- Financial Intelligence & Statistical Anomaly Detector
+   Collaborative Development: Sukritti Singla -- Harshita Malhotra -- Simran Kapoor
    ============================================================================= */
 
 'use strict';
@@ -44,7 +43,7 @@ const AppRouter = {
             }
         });
 
-        // Fetch user data from LocalStorage
+        // Read the user's data (loaded from the API by StorageModule)
         const currentUser = window.StorageModule.getCurrentUser ? window.StorageModule.getCurrentUser() : null;
         let transactions = [];
         if (currentUser && window.StorageModule.getTransactionsForUser) {
@@ -89,7 +88,7 @@ const AppRouter = {
     },
 
     /* =======================================================================
-     * VIEW RENDERING — DASHBOARD (EXECUTIVE OVERVIEW)
+     * VIEW RENDERING â€” DASHBOARD (EXECUTIVE OVERVIEW)
      * ======================================================================= */
 
     renderDashboard: function(transactions, analysis, settings) {
@@ -206,7 +205,7 @@ const AppRouter = {
                         ${anomalousCount}
                     </div>
                     <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem;">
-                        ${anomalyRate.toFixed(1)}% of spending flagged (&ge; ${settings.zScoreThreshold || 3.0}σ)
+                        ${anomalyRate.toFixed(1)}% of spending flagged (&ge; ${settings.zScoreThreshold || 3.0}Ïƒ)
                     </div>
                 </div>
 
@@ -250,7 +249,7 @@ const AppRouter = {
                         </div>
                     </div>
                     <div style="border-top: 1px solid var(--border-color); padding-top: 0.75rem; margin-top: 0.75rem; display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-tertiary);">
-                        <span>Threshold Sensitivity: <strong>${settings.zScoreThreshold || 3.0}σ</strong></span>
+                        <span>Threshold Sensitivity: <strong>${settings.zScoreThreshold || 3.0}Ïƒ</strong></span>
                         <a href="#/settings" style="color: var(--accent-primary); text-decoration: none;">Adjust in Settings</a>
                     </div>
                 </div>
@@ -309,12 +308,12 @@ const AppRouter = {
                                 let statusBadge = '<span class="badge badge-normal">Normal</span>';
                                 if (isAnom) {
                                     const severity = tx.severity || (tx.analysis ? tx.analysis.severity : 'High');
-                                    statusBadge = `<span class="badge badge-warning" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3);">${severity} (+${Math.abs(z || 0).toFixed(1)}σ)</span>`;
+                                    statusBadge = `<span class="badge badge-warning" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3);">${severity} (+${Math.abs(z || 0).toFixed(1)}Ïƒ)</span>`;
                                 } else if (tx.insufficientData) {
                                     statusBadge = '<span class="badge" style="background: rgba(148, 163, 184, 0.1); color: #94a3b8;">Learning</span>';
                                 }
 
-                                const txDateDisplay = tx.date || (tx.timestamp ? new Date(tx.timestamp).toISOString().split('T')[0] : '—');
+                                const txDateDisplay = tx.date || (tx.timestamp ? new Date(tx.timestamp).toISOString().split('T')[0] : 'â€”');
 
                                 return `
                                     <tr data-tx-id="${tx.id}">
@@ -359,7 +358,7 @@ const AppRouter = {
     },
 
     /* =======================================================================
-     * VIEW RENDERING — SPENDING ANALYSIS (PHASE 1 STATISTICAL DETECTOR)
+     * VIEW RENDERING â€” SPENDING ANALYSIS (PHASE 1 STATISTICAL DETECTOR)
      * ======================================================================= */
 
     renderSpendingAnalysis: function(transactions, analysis, settings) {
@@ -387,7 +386,7 @@ const AppRouter = {
             statusMetricColor = 'var(--status-warning)';
         }
 
-        // Real Category Spending derived from LocalStorage
+        // Real Category Spending derived from the saved transactions
         const categoryTotals = {};
         let totalSpend = 0;
         transactions.forEach(tx => {
@@ -487,12 +486,12 @@ const AppRouter = {
                         <h4 style="margin-bottom: 0.75rem; font-size: 0.8125rem; color: var(--text-secondary); letter-spacing: 0.05em; text-transform: uppercase;">STATISTICAL PIPELINE</h4>
                         <div style="font-family: monospace; font-size: 0.75rem; color: var(--text-tertiary); display: flex; flex-direction: column; gap: 0.25rem;">
                             <span>TRANSACTIONS</span>
-                            <span>↓ CATEGORY GROUPING</span>
-                            <span>↓ STATISTICAL BASELINE</span>
-                            <span style="color: var(--accent-primary); font-weight: 600;">↓ MEAN + STANDARD DEVIATION</span>
-                            <span>↓ Z-SCORE CALCULATION</span>
-                            <span>↓ THRESHOLD CHECK (${settings.zScoreThreshold || 3.0}σ)</span>
-                            <span style="color: var(--status-warning); font-weight: 600;">↓ ANOMALY RESULTS</span>
+                            <span>â†“ CATEGORY GROUPING</span>
+                            <span>â†“ STATISTICAL BASELINE</span>
+                            <span style="color: var(--accent-primary); font-weight: 600;">â†“ MEAN + STANDARD DEVIATION</span>
+                            <span>â†“ Z-SCORE CALCULATION</span>
+                            <span>â†“ THRESHOLD CHECK (${settings.zScoreThreshold || 3.0}Ïƒ)</span>
+                            <span style="color: var(--status-warning); font-weight: 600;">â†“ ANOMALY RESULTS</span>
                         </div>
                     </div>
                 </div>
@@ -523,10 +522,10 @@ const AppRouter = {
                                     </div>
                                     <div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 0.75rem;">
                                         <span style="font-size: 1.25rem; font-weight: 600; color: var(--text-primary);">${window.UIModule.formatCurrency(a.transaction.amount)}</span>
-                                        <span style="font-family: monospace; font-size: 0.8125rem; color: var(--status-warning); font-weight: 600;">Z: ${a.zScore > 0 ? '+' : ''}${a.zScore.toFixed(2)}σ</span>
+                                        <span style="font-family: monospace; font-size: 0.8125rem; color: var(--status-warning); font-weight: 600;">Z: ${a.zScore > 0 ? '+' : ''}${a.zScore.toFixed(2)}Ïƒ</span>
                                     </div>
                                     <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px dashed var(--border-color);">
-                                        Baseline Mean: ${window.UIModule.formatCurrency(a.baseline ? a.baseline.mean : a.mean)} &bull; σ: ${window.UIModule.formatCurrency(a.baseline ? a.baseline.standardDeviation : a.stdDev)}
+                                        Baseline Mean: ${window.UIModule.formatCurrency(a.baseline ? a.baseline.mean : a.mean)} &bull; Ïƒ: ${window.UIModule.formatCurrency(a.baseline ? a.baseline.standardDeviation : a.stdDev)}
                                     </div>
                                 </div>
                             `;
@@ -563,7 +562,7 @@ const AppRouter = {
     },
 
     /* =======================================================================
-     * VIEW RENDERING — TRANSACTIONS MANAGEMENT
+     * VIEW RENDERING â€” TRANSACTIONS MANAGEMENT
      * ======================================================================= */
 
     _txFilters: { search: '', category: 'ALL', type: 'ALL', status: 'ALL' },
@@ -683,12 +682,12 @@ const AppRouter = {
                             let statusBadge = '<span class="badge badge-normal">Normal</span>';
                             if (isAnom) {
                                 const severity = tx.severity || (tx.analysis ? tx.analysis.severity : 'High');
-                                statusBadge = `<span class="badge badge-warning" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3);">${severity} (+${Math.abs(z || 0).toFixed(1)}σ)</span>`;
+                                statusBadge = `<span class="badge badge-warning" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3);">${severity} (+${Math.abs(z || 0).toFixed(1)}Ïƒ)</span>`;
                             } else if (tx.insufficientData) {
                                 statusBadge = '<span class="badge" style="background: rgba(148, 163, 184, 0.1); color: #94a3b8;">Learning</span>';
                             }
 
-                            const txDateDisplay = tx.date || (tx.timestamp ? new Date(tx.timestamp).toISOString().split('T')[0] : '—');
+                            const txDateDisplay = tx.date || (tx.timestamp ? new Date(tx.timestamp).toISOString().split('T')[0] : 'â€”');
 
                             return `
                                 <tr data-tx-id="${tx.id}">
@@ -724,7 +723,7 @@ const AppRouter = {
     },
 
     /* =======================================================================
-     * VIEW RENDERING — ANOMALIES CENTER
+     * VIEW RENDERING â€” ANOMALIES CENTER
      * ======================================================================= */
 
     _anomalyFilter: 'ALL',
@@ -812,10 +811,10 @@ const AppRouter = {
                             <div style="background: var(--bg-base); padding: 0.75rem; border-radius: 6px; border: 1px solid var(--border-color); margin-bottom: 1rem; font-size: 0.8125rem;">
                                 <div style="display: flex; justify-content: space-between; margin-bottom: 0.35rem;">
                                     <span style="color: var(--text-secondary);">Z-Score Deviation</span>
-                                    <span style="color: ${borderCol}; font-family: monospace; font-weight: 700;">+${Math.abs(a.zScore || 0).toFixed(2)}σ</span>
+                                    <span style="color: ${borderCol}; font-family: monospace; font-weight: 700;">+${Math.abs(a.zScore || 0).toFixed(2)}Ïƒ</span>
                                 </div>
                                 <div style="display: flex; justify-content: space-between; margin-bottom: 0.35rem;">
-                                    <span style="color: var(--text-secondary);">Category Baseline (μ)</span>
+                                    <span style="color: var(--text-secondary);">Category Baseline (Î¼)</span>
                                     <span style="font-family: monospace;">${window.UIModule.formatCurrency(a.baseline ? a.baseline.mean : (a.mean || 0))}</span>
                                 </div>
                                 <div style="display: flex; justify-content: space-between;">
@@ -852,7 +851,7 @@ const AppRouter = {
     },
 
     /* =======================================================================
-     * VIEW RENDERING — FINANCE & ANOMALY VIDEOS MASTERCLASS
+     * VIEW RENDERING â€” FINANCE & ANOMALY VIDEOS MASTERCLASS
      * ======================================================================= */
 
     _learningFilter: 'ALL',
@@ -879,7 +878,7 @@ const AppRouter = {
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
                 <button type="button" class="btn" onclick="window.UIModule.closeModal()">Close Player</button>
                 <a href="https://www.youtube.com/watch?v=${youtubeId}" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="font-size: 0.8125rem;">
-                    Open on YouTube ↗
+                    Open on YouTube â†—
                 </a>
             </div>
         `;
@@ -1047,7 +1046,7 @@ const AppRouter = {
                             <div style="padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between; flex: 1;">
                                 <div>
                                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                                        <span class="badge" style="background: rgba(255,255,255,0.06); font-size: 0.65rem;">${video.channel} • ${video.duration}</span>
+                                        <span class="badge" style="background: rgba(255,255,255,0.06); font-size: 0.65rem;">${video.channel} â€¢ ${video.duration}</span>
                                         ${isRelevantToAnomaly ? '<span class="badge badge-warning" style="font-size: 0.65rem;">Recommended for You</span>' : ''}
                                     </div>
                                     <h3 style="font-size: 0.95rem; font-weight: 600; line-height: 1.4; margin-bottom: 0.5rem; color: var(--text-primary);">
@@ -1065,7 +1064,7 @@ const AppRouter = {
                                             Expand Player
                                         </button>
                                         <a href="https://www.youtube.com/watch?v=${video.youtubeId}" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="font-size: 0.8125rem; padding: 0.5rem 0.85rem;" title="Open in YouTube">
-                                            Watch on YouTube ↗
+                                            Watch on YouTube â†—
                                         </a>
                                     </div>
                                 </div>
@@ -1080,7 +1079,7 @@ const AppRouter = {
     },
 
     /* =======================================================================
-     * VIEW RENDERING — ANALYTICS
+     * VIEW RENDERING â€” ANALYTICS
      * ======================================================================= */
 
     renderAnalytics: function(transactions, analysis) {
@@ -1125,7 +1124,7 @@ const AppRouter = {
                         if (i.type === 'warning') color = 'var(--status-warning)';
                         if (i.type === 'success') color = 'var(--status-success)';
                         return `<div style="display: flex; gap: 0.5rem; align-items: flex-start;">
-                            <span style="color: ${color}; mt-1">•</span>
+                            <span style="color: ${color}; mt-1">â€¢</span>
                             <span style="font-size: 0.875rem;">${i.text}</span>
                         </div>`;
                     }).join('')}
@@ -1176,8 +1175,8 @@ const AppRouter = {
                             <tr>
                                 <th>Category</th>
                                 <th>Transactions</th>
-                                <th class="cell-amount">Mean (μ)</th>
-                                <th class="cell-amount">Std Dev (σ)</th>
+                                <th class="cell-amount">Mean (Î¼)</th>
+                                <th class="cell-amount">Std Dev (Ïƒ)</th>
                                 <th>Status</th>
                             </tr>
                         </thead>
@@ -1220,14 +1219,14 @@ const AppRouter = {
     },
 
     /* =======================================================================
-     * VIEW RENDERING — SETTINGS
+     * VIEW RENDERING â€” SETTINGS
      * ======================================================================= */
 
     renderSettings: function(settings) {
         let html = `
             <div style="margin-bottom: 2rem;">
                 <h1>Settings & Data</h1>
-                <p class="subtitle">Configure detection parameters and manage local data.</p>
+                <p class="subtitle">Configure detection parameters and manage your data.</p>
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
@@ -1235,13 +1234,13 @@ const AppRouter = {
                     <h3 style="margin-bottom: 1.5rem; color: var(--accent-primary);">Detection Settings</h3>
                     
                     <div class="form-group">
-                        <label class="form-label">Z-Score Threshold (σ)</label>
+                        <label class="form-label">Z-Score Threshold (Ïƒ)</label>
                         <select id="zScoreSelect" class="form-select" onchange="AppRouter.updateSetting('zScoreThreshold', parseFloat(this.value))">
-                            <option value="2.0" ${settings.zScoreThreshold === 2.0 ? 'selected' : ''}>2.0σ (Strict - Flags More Anomalies)</option>
-                            <option value="2.5" ${settings.zScoreThreshold === 2.5 ? 'selected' : ''}>2.5σ (Sensitive)</option>
-                            <option value="3.0" ${settings.zScoreThreshold === 3.0 || !settings.zScoreThreshold ? 'selected' : ''}>3.0σ (Default - High Confidence)</option>
-                            <option value="3.5" ${settings.zScoreThreshold === 3.5 ? 'selected' : ''}>3.5σ (Lenient)</option>
-                            <option value="4.0" ${settings.zScoreThreshold === 4.0 ? 'selected' : ''}>4.0σ (Extreme Outliers Only)</option>
+                            <option value="2.0" ${settings.zScoreThreshold === 2.0 ? 'selected' : ''}>2.0Ïƒ (Strict - Flags More Anomalies)</option>
+                            <option value="2.5" ${settings.zScoreThreshold === 2.5 ? 'selected' : ''}>2.5Ïƒ (Sensitive)</option>
+                            <option value="3.0" ${settings.zScoreThreshold === 3.0 || !settings.zScoreThreshold ? 'selected' : ''}>3.0Ïƒ (Default - High Confidence)</option>
+                            <option value="3.5" ${settings.zScoreThreshold === 3.5 ? 'selected' : ''}>3.5Ïƒ (Lenient)</option>
+                            <option value="4.0" ${settings.zScoreThreshold === 4.0 ? 'selected' : ''}>4.0Ïƒ (Extreme Outliers Only)</option>
                         </select>
                         <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.5rem;">
                             Controls the threshold for statistical outlier classification: |Z| &ge; threshold flags anomaly.
@@ -1252,7 +1251,7 @@ const AppRouter = {
                 <div class="card">
                     <h3 style="margin-bottom: 1.5rem; color: var(--status-success);">Statistical Engine Info</h3>
                     <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.6;">
-                        Phase 1 uses <strong>Z-Score Statistical Detection</strong> computed per category (mean + standard deviation) over your LocalStorage records.
+                        Phase 1 uses <strong>Z-Score Statistical Detection</strong> computed per category (mean + standard deviation) over your saved transaction records.
                     </p>
                     <div style="margin-top: 1rem; font-family: monospace; font-size: 0.75rem; color: var(--accent-primary);">
                         Formula: Z = (Amount - Mean) / StandardDeviation
@@ -1278,33 +1277,38 @@ const AppRouter = {
      * ACTIONS, MODALS & UTILITIES
      * ======================================================================= */
 
-    updateSetting: function(key, value) {
-        window.StorageModule.updateSetting(key, value);
-        window.UIModule.showToast(`Updated threshold to ${value}σ`, 'success');
+    updateSetting: async function(key, value) {
+        try {
+            await window.StorageModule.updateSetting(key, value);
+            window.UIModule.showToast(`Updated threshold to ${value}Ïƒ`, 'success');
+        } catch (error) {
+            window.UIModule.showToast(`Could not save setting: ${error.message}`, 'error');
+        }
+        // Re-render either way so the dropdown shows the value actually saved.
         this.handleRoute();
     },
 
-    loadDemoData: function() {
+    loadDemoData: async function() {
         if(confirm('Load sample transactions into your account for testing statistical anomaly detection?')) {
-            const currentUser = window.StorageModule.getCurrentUser ? window.StorageModule.getCurrentUser() : null;
-            if (currentUser) {
-                if (window.StorageModule.seedDemoDataForUser) {
-                    window.StorageModule.seedDemoDataForUser(currentUser.email);
-                }
+            try {
+                await window.StorageModule.loadDemoData();
+                window.UIModule.showToast('Sample dataset loaded successfully!', 'success');
+                this.handleRoute();
+            } catch (error) {
+                window.UIModule.showToast(`Could not load sample data: ${error.message}`, 'error');
             }
-            window.UIModule.showToast('Sample dataset loaded successfully!', 'success');
-            this.handleRoute();
         }
     },
 
-    clearAllData: function() {
+    clearAllData: async function() {
         if(confirm('Are you sure you want to clear all transactions for your account? This cannot be undone.')) {
-            const currentUser = window.StorageModule.getCurrentUser ? window.StorageModule.getCurrentUser() : null;
-            if (currentUser) {
-                window.StorageModule.clearUserTransactions(currentUser.email);
+            try {
+                await window.StorageModule.clearUserTransactions();
+                window.UIModule.showToast('All your transactions have been cleared.', 'info');
+                this.handleRoute();
+            } catch (error) {
+                window.UIModule.showToast(`Could not clear transactions: ${error.message}`, 'error');
             }
-            window.UIModule.showToast('All your transactions have been cleared.', 'info');
-            this.handleRoute();
         }
     },
 
@@ -1331,7 +1335,7 @@ const AppRouter = {
                         <span style="font-size: 1.25rem; font-weight: 600;">${window.UIModule.formatCurrency(amt)}</span>
                     </div>
                     <div style="margin-top: 1rem; font-size: 0.8125rem; color: var(--text-secondary);">
-                        Date: ${anomaly.transaction.date || '—'}<br>
+                        Date: ${anomaly.transaction.date || 'â€”'}<br>
                         Payment Method: ${anomaly.transaction.paymentMethod || 'Standard'}
                     </div>
                 </div>
@@ -1341,11 +1345,11 @@ const AppRouter = {
                     <h4 style="margin-bottom: 1rem; color: var(--text-primary);">Statistical Evidence Breakdown</h4>
                     <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
                         <tr style="border-bottom: 1px solid var(--border-color);">
-                            <td style="padding: 0.5rem 0; color: var(--text-secondary);">Category Historical Mean (μ)</td>
+                            <td style="padding: 0.5rem 0; color: var(--text-secondary);">Category Historical Mean (Î¼)</td>
                             <td style="padding: 0.5rem 0; text-align: right; font-family: monospace;">${window.UIModule.formatCurrency(mean)}</td>
                         </tr>
                         <tr style="border-bottom: 1px solid var(--border-color);">
-                            <td style="padding: 0.5rem 0; color: var(--text-secondary);">Standard Deviation (σ)</td>
+                            <td style="padding: 0.5rem 0; color: var(--text-secondary);">Standard Deviation (Ïƒ)</td>
                             <td style="padding: 0.5rem 0; text-align: right; font-family: monospace;">${window.UIModule.formatCurrency(std)}</td>
                         </tr>
                         <tr style="border-bottom: 1px solid var(--border-color);">
@@ -1354,7 +1358,7 @@ const AppRouter = {
                         </tr>
                         <tr>
                             <td style="padding: 0.5rem 0; color: var(--text-primary); font-weight: 600;">Calculated Z-Score</td>
-                            <td style="padding: 0.5rem 0; text-align: right; color: var(--status-danger); font-family: monospace; font-weight: 600; font-size: 1.125rem;">+${z.toFixed(2)}σ</td>
+                            <td style="padding: 0.5rem 0; text-align: right; color: var(--status-danger); font-family: monospace; font-weight: 600; font-size: 1.125rem;">+${z.toFixed(2)}Ïƒ</td>
                         </tr>
                     </table>
                     
@@ -1402,7 +1406,7 @@ const AppRouter = {
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                     <div class="form-group">
-                        <label class="form-label">Amount (₹)</label>
+                        <label class="form-label">Amount (â‚¹)</label>
                         <input type="number" id="txAmount" class="form-input" required min="1" step="0.01" placeholder="e.g., 2500">
                     </div>
                     <div class="form-group">
@@ -1445,7 +1449,7 @@ const AppRouter = {
         window.UIModule.openModal('Add Transaction', html);
     },
 
-    submitAddTransaction: function(e) {
+    submitAddTransaction: async function(e) {
         e.preventDefault();
         
         const dateStr = document.getElementById('txDate').value;
@@ -1464,7 +1468,18 @@ const AppRouter = {
             notes: (document.getElementById('txNotes') ? document.getElementById('txNotes').value.trim() : '')
         };
 
-        window.StorageModule.addTransactionForUser(tx);
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        if (submitBtn) submitBtn.disabled = true;
+
+        try {
+            await window.StorageModule.addTransactionForUser(tx);
+        } catch (error) {
+            // Keep the modal open so nothing the user typed is lost.
+            window.UIModule.showToast(`Could not save transaction: ${error.message}`, 'error');
+            if (submitBtn) submitBtn.disabled = false;
+            return;
+        }
+
         window.UIModule.closeModal();
         window.UIModule.showToast('Transaction recorded. Baselines recalculated!', 'success');
         
@@ -1499,7 +1514,7 @@ const AppRouter = {
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                     <div class="form-group">
-                        <label class="form-label">Amount (₹)</label>
+                        <label class="form-label">Amount (â‚¹)</label>
                         <input type="number" id="editTxAmount" class="form-input" required min="0.01" step="0.01" value="${tx.amount}">
                     </div>
                     <div class="form-group">
@@ -1545,7 +1560,7 @@ const AppRouter = {
         window.UIModule.openModal('Edit Transaction', html);
     },
 
-    submitEditTransaction: function(e, txId) {
+    submitEditTransaction: async function(e, txId) {
         e.preventDefault();
         const dateStr = document.getElementById('editTxDate').value;
         const currentUser = window.StorageModule.getCurrentUser ? window.StorageModule.getCurrentUser() : null;
@@ -1564,8 +1579,15 @@ const AppRouter = {
             description: document.getElementById('editTxNotes').value.trim() || document.getElementById('editTxMerchant').value.trim()
         };
 
-        if (window.StorageModule.updateTransaction) {
-            window.StorageModule.updateTransaction(updatedTx);
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        if (submitBtn) submitBtn.disabled = true;
+
+        try {
+            await window.StorageModule.updateTransaction(updatedTx);
+        } catch (error) {
+            window.UIModule.showToast(`Could not update transaction: ${error.message}`, 'error');
+            if (submitBtn) submitBtn.disabled = false;
+            return;
         }
 
         window.UIModule.closeModal();
@@ -1573,9 +1595,14 @@ const AppRouter = {
         setTimeout(() => this.handleRoute(), 100);
     },
 
-    deleteTransaction: function(txId, fromModal = false) {
+    deleteTransaction: async function(txId, fromModal = false) {
         if (confirm('Are you sure you want to delete this transaction? This will automatically update your statistical baselines.')) {
-            window.StorageModule.deleteTransaction(txId);
+            try {
+                await window.StorageModule.deleteTransaction(txId);
+            } catch (error) {
+                window.UIModule.showToast(`Could not delete transaction: ${error.message}`, 'error');
+                return;
+            }
             if (fromModal) {
                 window.UIModule.closeModal();
             }
@@ -1660,7 +1687,7 @@ const AppRouter = {
                 <div style="margin-bottom: 1rem;">
                     <input type="file" id="csvFileInput" accept=".csv,text/csv" class="form-input" style="padding: 0.5rem;" onchange="AppRouter.handleCsvFileUpload(event)">
                 </div>
-                <div style="text-align: center; color: var(--text-tertiary); font-size: 0.75rem; margin-bottom: 0.75rem;">— OR PASTE RAW CSV CONTENT —</div>
+                <div style="text-align: center; color: var(--text-tertiary); font-size: 0.75rem; margin-bottom: 0.75rem;">â€” OR PASTE RAW CSV CONTENT â€”</div>
                 <textarea id="csvData" class="form-input" style="height: 150px; font-family: monospace; font-size: 0.75rem;" placeholder="Transaction_ID,Date,Amount,Category,Merchant,Payment_Method&#10;TXN01,2026-01-01,150.00,Food,Local Diner,UPI"></textarea>
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
@@ -1686,7 +1713,7 @@ const AppRouter = {
         reader.readAsText(file);
     },
 
-    submitCsvImport: function(e) {
+    submitCsvImport: async function(e) {
         if (e) e.preventDefault();
 
         const textarea = document.getElementById('csvData');
@@ -1711,21 +1738,25 @@ const AppRouter = {
         if (result && (result.valid || result.transactions)) {
             const txns = result.valid || result.transactions || [];
             if (txns.length > 0) {
-                // Ensure every transaction has the current user ID
-                txns.forEach(tx => {
-                    tx.userId = userEmail;
-                });
-
-                const currentTxs = window.StorageModule.getTransactionsForUser(userEmail) || [];
-                const all = window.StorageModule.getAllTransactions();
-                const otherUserTxs = all.filter(tx => tx.userId !== userEmail);
-
-                window.StorageModule.saveAllTransactions([...txns, ...currentTxs, ...otherUserTxs]);
+                // The server validates every row again, assigns them to the
+                // logged-in account and skips rows that were imported before.
+                let summary;
+                try {
+                    summary = await window.StorageModule.importTransactions(txns);
+                } catch (error) {
+                    window.UIModule.showToast(`Import failed: ${error.message}`, 'error');
+                    return;
+                }
                 window.UIModule.closeModal();
-                
-                let toastMsg = `Imported ${txns.length} transaction${txns.length > 1 ? 's' : ''} successfully!`;
-                if (result.invalidCount > 0) {
-                    toastMsg += ` (${result.invalidCount} invalid rows skipped)`;
+
+                const imported = summary.importedCount;
+                const invalidCount = (result.invalidCount || 0) + summary.invalidCount;
+                let toastMsg = `Imported ${imported} transaction${imported !== 1 ? 's' : ''} successfully!`;
+                if (invalidCount > 0) {
+                    toastMsg += ` (${invalidCount} invalid rows skipped)`;
+                }
+                if (summary.duplicateCount > 0) {
+                    toastMsg += ` (${summary.duplicateCount} already imported)`;
                 }
                 window.UIModule.showToast(toastMsg, 'success');
                 

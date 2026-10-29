@@ -1,7 +1,6 @@
-/* =============================================================================
-   COMMIT NO. 11
-   COMMIT BY: Sukritti
-   COMMIT MESSAGE: feat(csv): intelligent CSV parsing, flexible column mapping and batch transaction import
+﻿/* =============================================================================
+   AURELIS -- Financial Intelligence & Statistical Anomaly Detector
+   Collaborative Development: Sukritti Singla -- Harshita Malhotra -- Simran Kapoor
    ============================================================================= */
 
 'use strict';
@@ -120,7 +119,7 @@ const parseCSVText = (csvText, userId) => {
         }
 
         // Parse amount
-        const rawAmount = (cols[amountIdx] || '').replace(/[$,₹€£]/g, '').trim();
+        const rawAmount = (cols[amountIdx] || '').replace(/[$,â‚¹â‚¬Â£]/g, '').trim();
         const amount = parseFloat(rawAmount);
 
         if (isNaN(amount) || amount <= 0) {
@@ -158,6 +157,9 @@ const parseCSVText = (csvText, userId) => {
 
         valid.push({
             id: customId,
+            // An ID from the file lets the server skip this row if the same
+            // file is imported again. Generated IDs are not sent for that.
+            importRef: idIdx !== -1 && cols[idIdx] ? cols[idIdx].trim() : undefined,
             userId: userId,
             amount: amount,
             category: category,
@@ -181,7 +183,7 @@ const handleFileImport = (e, userId, onSuccess) => {
 
     const reader = new FileReader();
 
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
         try {
             const csvText = event.target.result;
             const { valid, invalidCount, errors } = parseCSVText(csvText, userId);
@@ -191,16 +193,16 @@ const handleFileImport = (e, userId, onSuccess) => {
                 return;
             }
 
-            // Save transactions to user storage
-            const currentTxs = window.StorageModule.getTransactionsForUser(userId) || [];
-            const all = window.StorageModule.getAllTransactions();
-            const otherUserTxs = all.filter(tx => tx.userId !== userId);
-            
-            window.StorageModule.saveAllTransactions([...valid, ...currentTxs, ...otherUserTxs]);
+            // Save through the API; the server validates every row again.
+            const summary = await window.StorageModule.importTransactions(valid);
 
-            let msg = `Successfully imported ${valid.length} transaction${valid.length > 1 ? 's' : ''}!`;
-            if (invalidCount > 0) {
-                msg += ` (${invalidCount} invalid rows skipped)`;
+            const imported = summary.importedCount;
+            let msg = `Successfully imported ${imported} transaction${imported !== 1 ? 's' : ''}!`;
+            if (invalidCount + summary.invalidCount > 0) {
+                msg += ` (${invalidCount + summary.invalidCount} invalid rows skipped)`;
+            }
+            if (summary.duplicateCount > 0) {
+                msg += ` (${summary.duplicateCount} already imported)`;
             }
             window.Utils.showToast(msg, 'success');
 
@@ -209,7 +211,7 @@ const handleFileImport = (e, userId, onSuccess) => {
             }
         } catch (err) {
             console.error(err);
-            window.Utils.showToast('Failed to parse CSV file: ' + err.message, 'danger');
+            window.Utils.showToast('Failed to import CSV file: ' + err.message, 'danger');
         }
     };
 

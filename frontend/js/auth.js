@@ -1,7 +1,6 @@
-/* =============================================================================
-   COMMIT NO. 14
-   COMMIT BY: Simran
-   COMMIT MESSAGE: feat(auth): client-side authentication controller, demo login and session guards
+﻿/* =============================================================================
+   AURELIS -- Financial Intelligence & Statistical Anomaly Detector
+   Collaborative Development: Sukritti Singla -- Harshita Malhotra -- Simran Kapoor
    ============================================================================= */
 
 'use strict';
@@ -44,7 +43,7 @@ const getCurrentUser = () => {
     return window.StorageModule.getCurrentUser();
 };
 
-const handleLogin = (e) => {
+const handleLogin = async (e) => {
     if (e) e.preventDefault();
 
     const emailEl = document.getElementById('login-email');
@@ -72,28 +71,28 @@ const handleLogin = (e) => {
 
     if (hasError) return;
 
-    const user = window.StorageModule.findUserByEmail(email);
+    const submitBtn = e && e.target ? e.target.querySelector('button[type="submit"]') : null;
+    if (submitBtn) submitBtn.disabled = true;
 
-    if (!user) {
-        window.Utils.showFieldError('login-email', 'No account found with this email. Please register.');
-        return;
+    try {
+        // The server checks the password against its bcrypt hash.
+        const user = await window.StorageModule.login(email, password);
+        window.Utils.showToast(`Welcome back, ${user.name}!`, 'success');
+
+        setTimeout(() => {
+            window.location.replace('dashboard.html');
+        }, 300);
+    } catch (error) {
+        if (error.status === 401) {
+            window.Utils.showFieldError('login-password', 'Incorrect email or password.');
+        } else {
+            window.Utils.showToast(error.message, 'danger');
+        }
+        if (submitBtn) submitBtn.disabled = false;
     }
-
-    if (user.password !== password) {
-        window.Utils.showFieldError('login-password', 'Incorrect password.');
-        return;
-    }
-
-    // Set session
-    window.StorageModule.setCurrentUser(user);
-    window.Utils.showToast(`Welcome back, ${user.name}!`, 'success');
-
-    setTimeout(() => {
-        window.location.replace('dashboard.html');
-    }, 300);
 };
 
-const handleRegister = (e) => {
+const handleRegister = async (e) => {
     if (e) e.preventDefault();
 
     const nameEl = document.getElementById('reg-name');
@@ -142,47 +141,44 @@ const handleRegister = (e) => {
 
     if (hasError) return;
 
-    // Check duplicate
-    if (window.StorageModule.findUserByEmail(email)) {
-        window.Utils.showFieldError('reg-email', 'An account with this email already exists.');
-        return;
+    const submitBtn = e && e.target ? e.target.querySelector('button[type="submit"]') : null;
+    if (submitBtn) submitBtn.disabled = true;
+
+    try {
+        await window.StorageModule.register(name, email, password);
+        window.Utils.showToast(`Account created! Welcome, ${name}.`, 'success');
+
+        setTimeout(() => {
+            window.location.replace('dashboard.html');
+        }, 300);
+    } catch (error) {
+        if (error.status === 409) {
+            window.Utils.showFieldError('reg-email', 'An account with this email already exists.');
+        } else if (error.status === 400) {
+            window.Utils.showFieldError('reg-email', error.message);
+        } else {
+            window.Utils.showToast(error.message, 'danger');
+        }
+        if (submitBtn) submitBtn.disabled = false;
     }
-
-    const newUser = { id: email, name, email, password };
-    window.StorageModule.saveUser(newUser);
-    window.StorageModule.setCurrentUser(newUser);
-    if (window.StorageModule.clearUserTransactions) {
-        window.StorageModule.clearUserTransactions(email);
-    }
-
-    window.Utils.showToast(`Account created! Welcome, ${name}.`, 'success');
-
-    setTimeout(() => {
-        window.location.replace('dashboard.html');
-    }, 300);
 };
 
-const handleDemoLogin = () => {
-    const demoUser = {
-        id: 'demo@aurelis.io',
-        name: 'Alex Vance',
-        email: 'demo@aurelis.io',
-        password: 'password123'
-    };
+const handleDemoLogin = async () => {
+    const demoLoginBtn = document.getElementById('demo-login-btn');
+    if (demoLoginBtn) demoLoginBtn.disabled = true;
 
-    window.StorageModule.saveUser(demoUser);
-    window.StorageModule.setCurrentUser(demoUser);
-
-    // Seed demo transactions if this user currently has none
-    const existing = window.StorageModule.getTransactionsForUser(demoUser.email);
-    if (existing.length === 0) {
-        window.StorageModule.seedDemoDataForUser(demoUser.email);
+    try {
+        // The server creates the shared demo account (and its sample
+        // transactions) the first time this is used.
+        await window.StorageModule.demoLogin();
+        window.Utils.showToast('Logged in as Demo User!', 'success');
+        setTimeout(() => {
+            window.location.replace('dashboard.html');
+        }, 250);
+    } catch (error) {
+        window.Utils.showToast(error.message, 'danger');
+        if (demoLoginBtn) demoLoginBtn.disabled = false;
     }
-
-    window.Utils.showToast('Logged in as Demo User!', 'success');
-    setTimeout(() => {
-        window.location.replace('dashboard.html');
-    }, 250);
 };
 
 const handleLogout = () => {

@@ -1,7 +1,6 @@
-/* =============================================================================
-   COMMIT NO. 27
-   COMMIT BY: Simran
-   COMMIT MESSAGE: feat(anomalies): anomaly filter handlers, threshold slider and table updates
+﻿/* =============================================================================
+   AURELIS -- Financial Intelligence & Statistical Anomaly Detector
+   Collaborative Development: Sukritti Singla -- Harshita Malhotra -- Simran Kapoor
    ============================================================================= */
 
 'use strict';
@@ -34,11 +33,11 @@ const initAnomaliesPage = () => {
 
     if (thresholdSlider && thresholdVal) {
         thresholdSlider.value = currentThreshold;
-        thresholdVal.textContent = `${parseFloat(currentThreshold).toFixed(1)}σ`;
+        thresholdVal.textContent = `${parseFloat(currentThreshold).toFixed(1)}Ïƒ`;
 
         thresholdSlider.addEventListener('input', (e) => {
             currentThreshold = parseFloat(e.target.value);
-            thresholdVal.textContent = `${currentThreshold.toFixed(1)}σ`;
+            thresholdVal.textContent = `${currentThreshold.toFixed(1)}Ïƒ`;
             window.StorageModule.updateSetting('zScoreThreshold', currentThreshold);
             loadAndRender();
         });
@@ -85,7 +84,7 @@ const loadAndRender = () => {
     if (totalEl) totalEl.textContent = transactions.length;
     if (anomEl) anomEl.textContent = anomalies.length;
     if (normEl) normEl.textContent = normal.length;
-    if (threshEl) threshEl.textContent = `${currentThreshold.toFixed(1)}σ`;
+    if (threshEl) threshEl.textContent = `${currentThreshold.toFixed(1)}Ïƒ`;
 
     populateCategoryFilter(transactions);
     renderTable();
@@ -137,23 +136,23 @@ const renderTable = () => {
 
     tbody.innerHTML = filtered.map(tx => {
         let badgeHtml = '<span class="badge badge-normal">Normal</span>';
-        let zScoreDisplay = `${tx.zScore > 0 ? '+' : ''}${tx.zScore.toFixed(2)}σ`;
+        let zScoreDisplay = `${tx.zScore > 0 ? '+' : ''}${tx.zScore.toFixed(2)}Ïƒ`;
 
         if (tx.insufficientData) {
             badgeHtml = '<span class="badge badge-insufficient">Need &ge;3 txs</span>';
-            zScoreDisplay = '—';
+            zScoreDisplay = 'â€”';
         } else if (tx.isAnomaly) {
             badgeHtml = `<span class="badge badge-${tx.severity}">${tx.severity.toUpperCase()}</span>`;
         }
 
-        const meanDisplay = tx.insufficientData ? '—' : window.Utils.formatCurrency(tx.mean);
-        const stdDisplay = tx.insufficientData ? '—' : window.Utils.formatCurrency(tx.standardDeviation);
+        const meanDisplay = tx.insufficientData ? 'â€”' : window.Utils.formatCurrency(tx.mean);
+        const stdDisplay = tx.insufficientData ? 'â€”' : window.Utils.formatCurrency(tx.standardDeviation);
 
         return `
             <tr data-id="${tx.id}">
                 <td>${window.Utils.formatDate(tx.date)}</td>
                 <td><strong style="color: var(--text-primary);">${tx.category}</strong></td>
-                <td style="color: var(--text-secondary);">${tx.description || '—'}</td>
+                <td style="color: var(--text-secondary);">${tx.description || 'â€”'}</td>
                 <td class="cell-amount">${window.Utils.formatCurrency(tx.amount)}</td>
                 <td style="font-family: monospace; color: var(--text-secondary);">${meanDisplay}</td>
                 <td style="font-family: monospace; color: var(--text-secondary);">${stdDisplay}</td>

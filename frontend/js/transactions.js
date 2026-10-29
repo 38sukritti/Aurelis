@@ -1,7 +1,6 @@
-/* =============================================================================
-   COMMIT NO. 15
-   COMMIT BY: Sukritti
-   COMMIT MESSAGE: feat(transactions): transaction CRUD helpers, validation and category tagging
+﻿/* =============================================================================
+   AURELIS -- Financial Intelligence & Statistical Anomaly Detector
+   Collaborative Development: Sukritti Singla -- Harshita Malhotra -- Simran Kapoor
    ============================================================================= */
 
 'use strict';

@@ -1,20 +1,19 @@
-/* =============================================================================
-   COMMIT NO. 18
-   COMMIT BY: Harshita
-   COMMIT MESSAGE: feat(ui): dynamic table rendering, toast notification system, badge helpers and modal controls
+﻿/* =============================================================================
+   AURELIS -- Financial Intelligence & Statistical Anomaly Detector
+   Collaborative Development: Sukritti Singla -- Harshita Malhotra -- Simran Kapoor
    ============================================================================= */
 
 'use strict';
 
 const UIModule = {
     /**
-     * Formats a numeric value into a currency string (default INR / ₹)
+     * Formats a numeric value into a currency string (default INR / â‚¹)
      */
     formatCurrency: function(amount) {
         if (window.Utils && typeof window.Utils.formatCurrency === 'function') {
             return window.Utils.formatCurrency(amount);
         }
-        if (typeof amount !== 'number' || isNaN(amount)) return '₹0.00';
+        if (typeof amount !== 'number' || isNaN(amount)) return 'â‚¹0.00';
         return new Intl.NumberFormat('en-IN', {
             style: 'currency',
             currency: 'INR',

@@ -1,7 +1,6 @@
-/* =============================================================================
-   COMMIT NO. 16
-   COMMIT BY: Simran
-   COMMIT MESSAGE: feat(charts): build Canvas 2D spending trend timeline and anomaly rate gauge
+﻿/* =============================================================================
+   AURELIS -- Financial Intelligence & Statistical Anomaly Detector
+   Collaborative Development: Sukritti Singla -- Harshita Malhotra -- Simran Kapoor
    ============================================================================= */
 
 const ChartsModule = {
@@ -130,7 +129,7 @@ const ChartsModule = {
         else if (total >= 1000) displayTotal = (total / 1000).toFixed(1) + 'k';
         else displayTotal = Math.round(total).toString();
         
-        ctx.fillText('₹' + displayTotal, centerX, centerY);
+        ctx.fillText('â‚¹' + displayTotal, centerX, centerY);
     },
 
     // Gauge for Anomaly Rate (0% to 100%)

@@ -1,7 +1,6 @@
-/* =============================================================================
-   COMMIT NO. 03
-   COMMIT BY: Sukritti
-   COMMIT MESSAGE: feat(utils): create currency formatting, date helpers and DOM utility functions
+﻿/* =============================================================================
+   AURELIS -- Financial Intelligence & Statistical Anomaly Detector
+   Collaborative Development: Sukritti Singla -- Harshita Malhotra -- Simran Kapoor
    ============================================================================= */
 
 /**
@@ -14,7 +13,7 @@
 const Utils = {
 
     formatCurrency: function (amount) {
-        if (typeof amount !== 'number' || isNaN(amount)) return '₹0.00';
+        if (typeof amount !== 'number' || isNaN(amount)) return 'â‚¹0.00';
         return new Intl.NumberFormat('en-IN', {
             style: 'currency',
             currency: 'INR',
@@ -23,7 +22,7 @@ const Utils = {
     },
 
     formatDate: function (dateStr) {
-        if (!dateStr) return '—';
+        if (!dateStr) return 'â€”';
         try {
             const d = new Date(dateStr);
             if (isNaN(d.getTime())) return dateStr;
