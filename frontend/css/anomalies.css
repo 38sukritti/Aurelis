@@ -1,10 +1,9 @@
-/* =============================================================================
-   COMMIT NO. 21
-   COMMIT BY: Harshita
-   COMMIT MESSAGE: feat(anomalies): style statistical anomaly table, filter chips and Z-score gauges
+﻿/* =============================================================================
+   AURELIS -- Financial Intelligence & Statistical Anomaly Detector
+   Collaborative Development: Sukritti Singla -- Harshita Malhotra -- Simran Kapoor
    ============================================================================= */
 
-/* anomalies.css — Anomaly Analysis Inspector Styles
+/* anomalies.css â€” Anomaly Analysis Inspector Styles
    Uses AURELIS design tokens and modern typography
    ========================================================================= */
 
@@ -24,7 +23,7 @@ body {
     width: 100%;
 }
 
-/* ── KPI Strip ────────────────────────────────────────────────────────────── */
+/* â”€â”€ KPI Strip â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .anomaly-kpi-strip {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -56,7 +55,7 @@ body {
     font-variant-numeric: tabular-nums;
 }
 
-/* ── Algorithm Banner ─────────────────────────────────────────────────────── */
+/* â”€â”€ Algorithm Banner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .algo-banner {
     background-color: var(--bg-surface);
     border: 1px solid rgba(59, 130, 246, 0.25);
@@ -96,7 +95,7 @@ body {
     border: 1px solid var(--border-color);
 }
 
-/* ── Controls Strip (Threshold Slider + Filters) ──────────────────────────── */
+/* â”€â”€ Controls Strip (Threshold Slider + Filters) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .controls-strip {
     display: flex;
     justify-content: space-between;
@@ -164,7 +163,7 @@ body {
     color: #fff;
 }
 
-/* ── Status Badges ────────────────────────────────────────────────────────── */
+/* â”€â”€ Status Badges â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .badge {
     display: inline-flex;
     align-items: center;

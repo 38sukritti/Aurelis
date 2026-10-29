@@ -1,7 +1,6 @@
 <!-- =============================================================================
-     COMMIT NO. 13
-     COMMIT BY: Harshita
-     COMMIT MESSAGE: feat(auth): create sign in and account registration interface
+     AURELIS — User Authentication & Session Security
+     Collaborative Development: Sukritti Singla • Harshita Malhotra • Simran Kapoor
      ============================================================================= -->
 <!DOCTYPE html>
 <html lang="en">
@@ -25,7 +24,7 @@
     <!-- Auth Guard: Redirect to dashboard if already logged in -->
     <script>
         (function() {
-            const raw = localStorage.getItem('currentUser') || localStorage.getItem('aurelis_current_user');
+            const raw = localStorage.getItem('aurelis_token') ? (localStorage.getItem('currentUser') || localStorage.getItem('aurelis_current_user')) : null;
             if (raw) {
                 try {
                     const user = JSON.parse(raw);
@@ -173,6 +172,10 @@
             </p>
         </div>
 
+        <div style="text-align: center; margin-top: 1.25rem; font-size: 0.75rem; color: var(--text-tertiary);">
+            Collaborative Project &bull; <strong>Sukritti Singla</strong> &bull; <strong>Harshita Malhotra</strong> &bull; <strong>Simran Kapoor</strong>
+        </div>
+
     </div>
 </main>
 
@@ -180,7 +183,7 @@
 <div id="toast-container" class="toast-container"></div>
 
 <!-- Scripts -->
-<script src="js/storage.js"></script>
+<script src="js/api.js"></script><script src="js/storage.js"></script>
 <script src="js/utils.js"></script>
 <script src="js/auth.js"></script>
 

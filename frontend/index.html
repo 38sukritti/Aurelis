@@ -26,6 +26,7 @@
     <div class="nav-brand">
         <a href="index.html" class="nav-logo">AURELIS</a>
         <span class="nav-tagline">Financial Intelligence</span>
+        <span class="nav-team-tag" style="font-size: 0.72rem; color: var(--text-tertiary); margin-left: 0.5rem; padding: 0.15rem 0.5rem; border: 1px solid var(--border-color); border-radius: 12px;">Team: Sukritti &bull; Harshita &bull; Simran</span>
     </div>
 
     <div class="nav-links">
@@ -298,6 +299,9 @@
     <div>
         <div class="footer-brand" style="font-weight: 700; letter-spacing: 0.12em;">AURELIS</div>
         <div class="footer-text" style="font-size: 0.8125rem; color: var(--text-tertiary);">Personal Wealth &amp; Spending Intelligence</div>
+        <div style="font-size: 0.8125rem; color: var(--text-secondary); margin-top: 0.35rem;">
+            Developed collaboratively by <strong>Sukritti Singla</strong> &bull; <strong>Harshita Malhotra</strong> &bull; <strong>Simran Kapoor</strong>
+        </div>
     </div>
     <div class="footer-text" style="font-size: 0.8125rem; color: var(--text-tertiary);">
         &copy; 2026 AURELIS. Private, local-first personal finance platform.
@@ -369,7 +373,7 @@
         // ── Authentication Session Recognition ──────────────────────────────
         (function() {
             function getStoredUser() {
-                const raw = localStorage.getItem('currentUser') || localStorage.getItem('aurelis_current_user');
+                const raw = localStorage.getItem('aurelis_token') ? (localStorage.getItem('currentUser') || localStorage.getItem('aurelis_current_user')) : null;
                 if (!raw) return null;
                 try {
                     const parsed = JSON.parse(raw);
