@@ -1,7 +1,6 @@
 <!-- =============================================================================
-     COMMIT NO. 23
-     COMMIT BY: Simran
-     COMMIT MESSAGE: feat(dashboard): create main AURELIS workspace shell with left sidebar navigation
+     AURELIS — Financial Intelligence & Statistical Anomaly Detector
+     Collaborative Development: Sukritti Singla • Harshita Malhotra • Simran Kapoor
      ============================================================================= -->
 <!DOCTYPE html>
 <html lang="en">
@@ -25,7 +24,7 @@
     <!-- Immediate Auth Guard -->
     <script>
         (function() {
-            const raw = localStorage.getItem('currentUser') || localStorage.getItem('aurelis_current_user');
+            const raw = localStorage.getItem('aurelis_token') ? (localStorage.getItem('currentUser') || localStorage.getItem('aurelis_current_user')) : null;
             if (!raw) {
                 window.location.replace('login.html');
                 return;
@@ -204,7 +203,7 @@
             <div class="sidebar-footer">
                 <div class="system-status">
                     <div class="status-indicator online"></div>
-                    <span class="status-text">LOCAL DATA</span>
+                    <span class="status-text">CLOUD DATA</span>
                 </div>
             </div>
 
@@ -216,6 +215,12 @@
                     <div class="sidebar-user-email" id="sidebar-user-email"></div>
                 </div>
                 <button class="btn-signout" id="sidebar-signout-btn" title="Sign Out">Sign Out</button>
+            </div>
+
+            <!-- Team Collaboration Credit -->
+            <div style="padding: 0.6rem 0.85rem; border-top: 1px solid var(--border-color); font-size: 0.72rem; color: var(--text-tertiary); background: rgba(255, 255, 255, 0.02);">
+                <div style="font-weight: 600; color: var(--text-secondary); margin-bottom: 0.15rem;">Collaborative Project</div>
+                <div style="color: var(--text-tertiary);">Sukritti &bull; Harshita &bull; Simran</div>
             </div>
         </aside>
 
@@ -244,7 +249,7 @@
 
     <!-- Scripts — order matters: statistics must load before anomalyEngine -->
     <script src="js/statistics.js"></script>
-    <script src="js/storage.js"></script>
+    <script src="js/api.js"></script>    <script src="js/storage.js"></script>
     <script src="js/utils.js"></script>
     <script src="js/transactions.js"></script>
     <script src="js/anomalyDetector.js"></script>
@@ -260,7 +265,7 @@
     <script>
         // Auth guard + user info wiring
         (function() {
-            const raw = localStorage.getItem('currentUser') || localStorage.getItem('aurelis_current_user');
+            const raw = localStorage.getItem('aurelis_token') ? (localStorage.getItem('currentUser') || localStorage.getItem('aurelis_current_user')) : null;
             let user = null;
             if (raw) {
                 try {
@@ -290,6 +295,7 @@
 
             if (signoutBtn) {
                 signoutBtn.addEventListener('click', () => {
+                    localStorage.removeItem('aurelis_token');
                     localStorage.removeItem('currentUser');
                     localStorage.removeItem('aurelis_current_user');
                     window.location.replace('index.html');
