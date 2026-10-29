@@ -1,20 +1,19 @@
-/* =============================================================================
-   COMMIT NO. 04
-   COMMIT BY: Sukritti
-   COMMIT MESSAGE: feat(math): implement mean, variance, sample standard deviation and Z-score calculations
+﻿/* =============================================================================
+   AURELIS -- Financial Intelligence & Statistical Anomaly Detector
+   Collaborative Development: Sukritti Singla -- Harshita Malhotra -- Simran Kapoor
    ============================================================================= */
 
 'use strict';
 
 const StatisticsModule = {
-    // Mean: μ = Σx / N
+    // Mean: Î¼ = Î£x / N
     calculateMean: function(values) {
         if (!values || values.length === 0) return 0;
         const sum = values.reduce((acc, val) => acc + parseFloat(val), 0);
         return sum / values.length;
     },
 
-    // Variance: σ² = Σ(x - μ)² / N
+    // Variance: ÏƒÂ² = Î£(x - Î¼)Â² / N
     calculateVariance: function(values, mean) {
         if (!values || values.length === 0) return 0;
         const m = mean !== undefined ? mean : this.calculateMean(values);
@@ -26,14 +25,14 @@ const StatisticsModule = {
         return sumSqDiffs / values.length;
     },
 
-    // Standard Deviation: σ = √Variance
+    // Standard Deviation: Ïƒ = âˆšVariance
     calculateStandardDeviation: function(values, mean) {
         if (!values || values.length <= 1) return 0;
         const variance = this.calculateVariance(values, mean);
         return Math.sqrt(variance);
     },
 
-    // Z-Score: Z = (x - μ) / σ
+    // Z-Score: Z = (x - Î¼) / Ïƒ
     calculateZScore: function(value, mean, standardDeviation) {
         // Zero standard deviation edge case: no variance, z-score is 0
         if (!standardDeviation || standardDeviation === 0) return 0;

@@ -1,7 +1,6 @@
-/* =============================================================================
-   COMMIT NO. 10
-   COMMIT BY: Sukritti
-   COMMIT MESSAGE: feat(engine): pipeline transactions through baseline calculation and decorate outliers
+﻿/* =============================================================================
+   AURELIS -- Financial Intelligence & Statistical Anomaly Detector
+   Collaborative Development: Sukritti Singla -- Harshita Malhotra -- Simran Kapoor
    ============================================================================= */
 
 'use strict';
@@ -53,7 +52,7 @@ const AnomalyEngine = {
                         zScore: zScore,
                         severity: severity,
                         deviationPercent: baseline.mean > 0 ? ((amount - baseline.mean) / baseline.mean) * 100 : 0,
-                        reason: `Transaction of ₹${amount} is ${zScore > 0 ? '+' : ''}${zScore.toFixed(2)}σ from your ${category} baseline (Mean: ₹${Math.round(baseline.mean)}).`
+                        reason: `Transaction of â‚¹${amount} is ${zScore > 0 ? '+' : ''}${zScore.toFixed(2)}Ïƒ from your ${category} baseline (Mean: â‚¹${Math.round(baseline.mean)}).`
                     });
                 }
             } else if (baseline && baseline.insufficientData) {

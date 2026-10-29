@@ -1,7 +1,6 @@
-/* =============================================================================
-   COMMIT NO. 09
-   COMMIT BY: Sukritti
-   COMMIT MESSAGE: feat(detector): build multi-category Z-score anomaly detector and threshold logic
+﻿/* =============================================================================
+   AURELIS -- Financial Intelligence & Statistical Anomaly Detector
+   Collaborative Development: Sukritti Singla -- Harshita Malhotra -- Simran Kapoor
    ============================================================================= */
 
 'use strict';

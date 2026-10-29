@@ -1,7 +1,6 @@
-/* =============================================================================
-   COMMIT NO. 08
-   COMMIT BY: Sukritti
-   COMMIT MESSAGE: feat(data): seed realistic transaction categories, baseline profiles, and synthetic generator
+﻿/* =============================================================================
+   AURELIS -- Financial Intelligence & Statistical Anomaly Detector
+   Collaborative Development: Sukritti Singla -- Harshita Malhotra -- Simran Kapoor
    ============================================================================= */
 
 const DataModule = {
@@ -180,7 +179,7 @@ const DataModule = {
                         tx.timestamp = validD.getTime();
                     }
                 } else if (header.includes('amount') || header === 'cost' || header === 'price') {
-                    const amt = parseFloat(value.replace(/[$,₹€£]/g, ''));
+                    const amt = parseFloat(value.replace(/[$,â‚¹â‚¬Â£]/g, ''));
                     if (isNaN(amt) || amt <= 0) isValid = false;
                     tx.amount = amt;
                 } else if (header.includes('recurring')) {

@@ -1,7 +1,6 @@
-/* =============================================================================
-   COMMIT NO. 29
-   COMMIT BY: Sukritti
-   COMMIT MESSAGE: refactor: archive experimental DNN simulations in favor of Phase 1 statistical engine
+﻿/* =============================================================================
+   AURELIS -- Financial Intelligence & Statistical Anomaly Detector
+   Collaborative Development: Sukritti Singla -- Harshita Malhotra -- Simran Kapoor
    ============================================================================= */
 
 // Phase 1 uses pure statistical z-score analysis (js/statistics.js and js/anomalyDetector.js).
